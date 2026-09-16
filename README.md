@@ -12,9 +12,9 @@ The AI will progressively become more advanced throughout development, eventuall
 
 ## 🚧 Current Status
 
-**Day 2 — Player Controls**
+**Day 2 — Player Controls & UI**
 
-The basic game canvas and player paddle are now implemented. The player paddle can be controlled using keyboard input on desktop and touch buttons on mobile devices.
+The player paddle and core input system are now implemented. Desktop players can use A/D or the arrow keys, while mouse users can move the paddle by moving across the game. On Android/mobile, the paddle follows the user's finger across the game area. The prototype control buttons have been removed and the game UI has been polished.
 
 ### Development Progress
 
@@ -25,6 +25,11 @@ The basic game canvas and player paddle are now implemented. The player paddle c
 - [x] Add player keyboard controls
 - [x] Add mobile touch controls
 - [x] Keep paddle inside canvas boundaries
+- [x] Increase paddle movement speed
+- [x] Add mouse-follow control
+- [x] Add finger-follow mobile control
+- [x] Remove on-screen control buttons
+- [x] Polish initial game UI
 - [ ] Add opponent paddle
 - [ ] Add ball
 - [ ] Implement ball physics
