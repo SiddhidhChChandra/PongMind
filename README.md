@@ -12,16 +12,19 @@ The AI will progressively become more advanced throughout development, eventuall
 
 ## 🚧 Current Status
 
-**Day 1 — Project Initialization**
+**Day 2 — Player Controls**
 
-The repository has been created and the initial project documentation is being established.
+The basic game canvas and player paddle are now implemented. The player paddle can be controlled using keyboard input on desktop and touch buttons on mobile devices.
 
 ### Development Progress
 
 - [x] Create GitHub repository
 - [x] Create initial README
-- [ ] Create game canvas
-- [ ] Add player paddle
+- [x] Create game canvas
+- [x] Add player paddle
+- [x] Add player keyboard controls
+- [x] Add mobile touch controls
+- [x] Keep paddle inside canvas boundaries
 - [ ] Add opponent paddle
 - [ ] Add ball
 - [ ] Implement ball physics
@@ -34,7 +37,6 @@ The repository has been created and the initial project documentation is being e
 - [ ] Create reinforcement learning environment
 - [ ] Train reinforcement learning agent
 - [ ] Integrate trained AI
-- [ ] Add mobile controls
 - [ ] Deploy game
 
 ## 🎮 Planned Features
@@ -106,7 +108,7 @@ Possible actions:
 - Reinforcement Learning
 
 ### Deployment
-- Vercel
+- GitHub Pages / Vercel
 - Progressive Web App (planned)
 
 ## 📱 Platform Goals
@@ -122,6 +124,10 @@ An installable mobile version may be explored after the web version is complete.
 ## 📈 Development Approach
 
 PongMind is being developed incrementally.
+
+Each development step follows:
+
+**PLAN → IMPLEMENT → TEST → DOCUMENT → COMMIT**
 
 The project will begin with a simple playable Pong prototype before adding AI, difficulty systems, power-ups, reinforcement learning, mobile support, and deployment.
 
