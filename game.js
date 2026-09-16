@@ -7,7 +7,7 @@ const player = {
     y: canvas.height - 30,
     width: 100,
     height: 10,
-    speed: 7
+    speed: 14
 };
 
 // Keyboard controls
@@ -40,37 +40,48 @@ document.addEventListener("keyup", function(event) {
     }
 });
 
-// Mobile touch controls
-const leftButton = document.getElementById("leftButton");
-const rightButton = document.getElementById("rightButton");
+// Mouse and touch controls
+// The paddle follows the horizontal position of the mouse/finger.
+function movePaddleToPointer(clientX) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const pointerX = (clientX - rect.left) * scaleX;
 
-leftButton.addEventListener("pointerdown", function(event) {
-    event.preventDefault();
-    leftPressed = true;
+    player.x = pointerX - player.width / 2;
+
+    // Keep paddle inside the canvas
+    if (player.x < 0) {
+        player.x = 0;
+    }
+
+    if (player.x + player.width > canvas.width) {
+        player.x = canvas.width - player.width;
+    }
+}
+
+// Mouse control
+canvas.addEventListener("pointermove", function(event) {
+    if (event.pointerType === "mouse") {
+        movePaddleToPointer(event.clientX);
+    }
 });
 
-rightButton.addEventListener("pointerdown", function(event) {
-    event.preventDefault();
-    rightPressed = true;
+// Touch / finger-follow control
+canvas.addEventListener("pointerdown", function(event) {
+    if (event.pointerType === "touch") {
+        event.preventDefault();
+        movePaddleToPointer(event.clientX);
+    }
 });
 
-leftButton.addEventListener("pointerup", function() {
-    leftPressed = false;
+canvas.addEventListener("pointermove", function(event) {
+    if (event.pointerType === "touch") {
+        event.preventDefault();
+        movePaddleToPointer(event.clientX);
+    }
 });
 
-rightButton.addEventListener("pointerup", function() {
-    rightPressed = false;
-});
-
-leftButton.addEventListener("pointerleave", function() {
-    leftPressed = false;
-});
-
-rightButton.addEventListener("pointerleave", function() {
-    rightPressed = false;
-});
-
-// Move the player
+// Move the player with keyboard controls
 function updatePlayer() {
 
     if (leftPressed) {
