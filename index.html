@@ -9,15 +9,44 @@
     <style>
         body {
             margin: 0;
-            background: #111;
+            background: #080B14;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            gap: 18px;
+            font-family: Arial, sans-serif;
         }
 
         canvas {
             border: 2px solid white;
+            max-width: 95vw;
+            height: auto;
+        }
+
+        .controls {
+            display: flex;
+            gap: 24px;
+        }
+
+        .control-button {
+            width: 100px;
+            height: 55px;
+            border: 2px solid #00A8FF;
+            border-radius: 12px;
+            background: #111827;
+            color: #00A8FF;
+            font-size: 20px;
+            font-weight: bold;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .control-button:active {
+            background: #00A8FF;
+            color: #080B14;
         }
     </style>
 </head>
@@ -25,6 +54,12 @@
 <body>
 
     <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <div class="controls">
+        <button class="control-button" id="leftButton">◀ LEFT</button>
+        <button class="control-button" id="rightButton">RIGHT ▶</button>
+    </div>
+
     <script src="game.js"></script>
 </body>
 </html>
