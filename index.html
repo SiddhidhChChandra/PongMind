@@ -2,63 +2,78 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
     <title>PongMind</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             background: #080B14;
+            color: white;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            gap: 18px;
+            padding: 20px;
             font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .game-title {
+            margin: 0 0 14px;
+            font-size: 32px;
+            letter-spacing: 4px;
+            color: #00A8FF;
+            text-transform: uppercase;
+        }
+
+        .game-subtitle {
+            margin: 0 0 18px;
+            color: #9CA3AF;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .game-wrapper {
+            width: min(800px, 95vw);
         }
 
         canvas {
-            border: 2px solid white;
-            max-width: 95vw;
+            display: block;
+            width: 100%;
             height: auto;
-        }
-
-        .controls {
-            display: flex;
-            gap: 24px;
-        }
-
-        .control-button {
-            width: 100px;
-            height: 55px;
             border: 2px solid #00A8FF;
-            border-radius: 12px;
-            background: #111827;
-            color: #00A8FF;
-            font-size: 20px;
-            font-weight: bold;
+            border-radius: 8px;
+            background: #05070D;
             touch-action: none;
-            user-select: none;
-            -webkit-user-select: none;
+            box-shadow: 0 0 24px rgba(0, 168, 255, 0.12);
         }
 
-        .control-button:active {
-            background: #00A8FF;
-            color: #080B14;
+        .controls-hint {
+            margin-top: 14px;
+            color: #6B7280;
+            font-size: 13px;
+            text-align: center;
         }
     </style>
 </head>
 
 <body>
 
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <h1 class="game-title">PongMind</h1>
+    <p class="game-subtitle">AI-powered Pong • Day 2 Prototype</p>
 
-    <div class="controls">
-        <button class="control-button" id="leftButton">◀ LEFT</button>
-        <button class="control-button" id="rightButton">RIGHT ▶</button>
+    <div class="game-wrapper">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
     </div>
+
+    <p class="controls-hint">Desktop: A / D or ← / → • Mobile: slide your finger across the game</p>
 
     <script src="game.js"></script>
 </body>
