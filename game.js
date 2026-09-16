@@ -40,13 +40,13 @@ document.addEventListener("keyup", function(event) {
     }
 });
 
-// Mouse and touch controls
-// The paddle follows the horizontal position of the mouse/finger.
+// Convert screen pointer position to canvas position
 function movePaddleToPointer(clientX) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const pointerX = (clientX - rect.left) * scaleX;
 
+    // Center the paddle on the pointer
     player.x = pointerX - player.width / 2;
 
     // Keep paddle inside the canvas
@@ -59,15 +59,17 @@ function movePaddleToPointer(clientX) {
     }
 }
 
-// Mouse control
-canvas.addEventListener("pointermove", function(event) {
-    if (event.pointerType === "mouse") {
-        movePaddleToPointer(event.clientX);
-    }
-});
+// Mouse control: paddle follows ONLY while left mouse button is held and dragged
+let mouseDragging = false;
 
-// Touch / finger-follow control
 canvas.addEventListener("pointerdown", function(event) {
+    if (event.pointerType === "mouse" && event.button === 0) {
+        mouseDragging = true;
+        canvas.setPointerCapture(event.pointerId);
+        movePaddleToPointer(event.clientX);
+    }
+
+    // Touch / finger-follow control
     if (event.pointerType === "touch") {
         event.preventDefault();
         movePaddleToPointer(event.clientX);
@@ -75,10 +77,33 @@ canvas.addEventListener("pointerdown", function(event) {
 });
 
 canvas.addEventListener("pointermove", function(event) {
+    // Mouse moves the paddle only during left-click drag
+    if (event.pointerType === "mouse" && mouseDragging) {
+        movePaddleToPointer(event.clientX);
+    }
+
+    // Touch follows the finger
     if (event.pointerType === "touch") {
         event.preventDefault();
         movePaddleToPointer(event.clientX);
     }
+});
+
+canvas.addEventListener("pointerup", function(event) {
+    if (event.pointerType === "mouse" && event.button === 0) {
+        mouseDragging = false;
+    }
+});
+
+canvas.addEventListener("pointercancel", function(event) {
+    if (event.pointerType === "mouse") {
+        mouseDragging = false;
+    }
+});
+
+// Stop mouse dragging if the pointer leaves the browser window
+window.addEventListener("blur", function() {
+    mouseDragging = false;
 });
 
 // Move the player with keyboard controls
