@@ -1,7 +1,7 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Physical HTML scoreboard
+// Physical scoreboard
 const playerScoreElement = document.getElementById("playerScore");
 const opponentScoreElement = document.getElementById("opponentScore");
 const scoreStatusElement = document.getElementById("scoreStatus");
@@ -32,7 +32,8 @@ const ball = {
     y: canvas.height / 2,
     size: 14,
     velocityX: 0,
-    velocityY: 0
+    velocityY: 0,
+    visible: true
 };
 
 // Ball speed progression
@@ -51,7 +52,16 @@ let playerScore = 0;
 let opponentScore = 0;
 const winningScore = 5;
 let gameOver = false;
-let scoreEffectTimer = null;
+
+// Post-score sequence
+let transitionActive = false;
+let transitionPhase = "none";
+let transitionStartTime = 0;
+let nextBallDirection = -1;
+
+const scoreFlashDuration = 1000;
+const readyDuration = 420;
+const goDuration = 420;
 
 // Keyboard controls
 let leftPressed = false;
@@ -89,10 +99,7 @@ function movePaddleToPointer(clientX) {
 
     player.x = pointerX - player.width / 2;
 
-    if (player.x < 0) {
-        player.x = 0;
-    }
-
+    if (player.x < 0) player.x = 0;
     if (player.x + player.width > canvas.width) {
         player.x = canvas.width - player.width;
     }
@@ -132,9 +139,7 @@ canvas.addEventListener("pointerup", function(event) {
 });
 
 canvas.addEventListener("pointercancel", function(event) {
-    if (event.pointerType === "mouse") {
-        mouseDragging = false;
-    }
+    if (event.pointerType === "mouse") mouseDragging = false;
 });
 
 window.addEventListener("blur", function() {
@@ -143,18 +148,12 @@ window.addEventListener("blur", function() {
 
 // Move the player with keyboard controls
 function updatePlayer() {
-    if (leftPressed) {
-        player.x -= player.speed;
-    }
+    if (transitionActive || gameOver) return;
 
-    if (rightPressed) {
-        player.x += player.speed;
-    }
+    if (leftPressed) player.x -= player.speed;
+    if (rightPressed) player.x += player.speed;
 
-    if (player.x < 0) {
-        player.x = 0;
-    }
-
+    if (player.x < 0) player.x = 0;
     if (player.x + player.width > canvas.width) {
         player.x = canvas.width - player.width;
     }
@@ -166,13 +165,16 @@ function updateAIUnpredictability() {
     const maximumError = 75;
 
     if (performance.now() >= nextAiErrorUpdate) {
-        aiTargetError = (Math.random() * 2 - 1) * maximumError * unpredictability;
+        aiTargetError =
+            (Math.random() * 2 - 1) * maximumError * unpredictability;
         nextAiErrorUpdate = performance.now() + 220;
     }
 }
 
-// Move the opponent smoothly toward an increasingly imperfect target
+// Move the opponent smoothly toward an increasingly imperfect target.
 function updateOpponent() {
+    if (transitionActive || gameOver) return;
+
     if (ball.velocityY < 0) {
         updateAIUnpredictability();
 
@@ -181,27 +183,19 @@ function updateOpponent() {
 
         let movement = difference * opponent.reaction;
 
-        if (movement > opponent.speed) {
-            movement = opponent.speed;
-        }
-
-        if (movement < -opponent.speed) {
-            movement = -opponent.speed;
-        }
+        if (movement > opponent.speed) movement = opponent.speed;
+        if (movement < -opponent.speed) movement = -opponent.speed;
 
         opponent.x += movement;
     }
 
-    if (opponent.x < 0) {
-        opponent.x = 0;
-    }
-
+    if (opponent.x < 0) opponent.x = 0;
     if (opponent.x + opponent.width > canvas.width) {
         opponent.x = canvas.width - opponent.width;
     }
 }
 
-// Return the current speed of the ball.
+// Return the current ball speed.
 function getCurrentBallSpeed() {
     return Math.min(
         startingBallSpeed + rallyTime * speedIncreasePerSecond,
@@ -209,7 +203,7 @@ function getCurrentBallSpeed() {
     );
 }
 
-// Launch the ball with a controlled angle.
+// Launch the ball from the center with a random direction.
 function launchBall(direction) {
     const speed = startingBallSpeed;
     const angle = Math.random() * 0.55 - 0.275;
@@ -218,6 +212,7 @@ function launchBall(direction) {
     ball.y = canvas.height / 2;
     ball.velocityX = Math.sin(angle) * speed;
     ball.velocityY = direction * Math.cos(angle) * speed;
+    ball.visible = true;
 
     rallyStartTime = performance.now();
     rallyTime = 0;
@@ -225,15 +220,79 @@ function launchBall(direction) {
     nextAiErrorUpdate = performance.now() + 1000;
 }
 
-// Reset the ball and paddles after a point
+// Prepare the next rally. The ball stays hidden during the sequence.
 function resetBall(direction) {
     player.x = canvas.width / 2 - player.width / 2;
     opponent.x = canvas.width / 2 - opponent.width / 2;
-    launchBall(direction);
+
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+    ball.velocityX = 0;
+    ball.velocityY = 0;
+    ball.visible = false;
+
+    nextBallDirection = direction;
+    transitionActive = true;
+    transitionPhase = "score";
+    transitionStartTime = performance.now();
+
+    triggerScoreFlash(direction === 1 ? "player" : "ai");
 }
 
-// Register a point and check for a winner
+// Update SCORE -> READY -> GO.
+function updateTransition() {
+    if (!transitionActive || gameOver) return;
+
+    const elapsed = performance.now() - transitionStartTime;
+
+    if (transitionPhase === "score" && elapsed >= scoreFlashDuration) {
+        transitionPhase = "ready";
+        transitionStartTime = performance.now();
+        setStatus("READY!", "#FFFFFF");
+        return;
+    }
+
+    if (transitionPhase === "ready" && elapsed >= readyDuration) {
+        transitionPhase = "go";
+        transitionStartTime = performance.now();
+        setStatus("GO!", "#FFFFFF");
+        return;
+    }
+
+    if (transitionPhase === "go" && elapsed >= goDuration) {
+        transitionActive = false;
+        transitionPhase = "none";
+        setStatus("PLAY", "#9CA3AF");
+        launchBall(nextBallDirection);
+    }
+}
+
+// Put the current match state in the physical scoreboard.
+function setStatus(text, color) {
+    scoreStatusElement.textContent = text;
+    scoreStatusElement.style.color = color;
+}
+
+// Trigger a center-out red/blue flash over the entire game area.
+function triggerScoreFlash(winner) {
+    scoreFlashElement.classList.remove("ai", "player");
+
+    // Force a reflow so every score restarts the animation.
+    void scoreFlashElement.offsetWidth;
+
+    scoreFlashElement.classList.add(winner);
+
+    if (winner === "player") {
+        setStatus("PLAYER SCORED!", "#00A8FF");
+    } else {
+        setStatus("AI SCORED!", "#FF4D6D");
+    }
+}
+
+// Register a point and begin the transition sequence.
 function scorePoint(playerWon) {
+    if (transitionActive || gameOver) return;
+
     if (playerWon) {
         playerScore++;
     } else {
@@ -241,72 +300,55 @@ function scorePoint(playerWon) {
     }
 
     updateScoreboard();
-    triggerScoreEffect(playerWon);
 
     if (playerScore >= winningScore || opponentScore >= winningScore) {
         gameOver = true;
         ball.velocityX = 0;
         ball.velocityY = 0;
+        ball.visible = false;
 
         if (playerWon) {
-            scoreStatusElement.textContent = "PLAYER SCORED! • YOU WIN! • SPACE TO RESTART";
+            setStatus("PLAYER SCORED! • YOU WIN!", "#00A8FF");
         } else {
-            scoreStatusElement.textContent = "AI SCORED! • AI WINS! • SPACE TO RESTART";
+            setStatus("AI SCORED! • AI WINS!", "#FF4D6D");
         }
-
         return;
     }
 
-    if (playerWon) {
-        resetBall(1);
-    } else {
-        resetBall(-1);
-    }
+    resetBall(playerWon ? 1 : -1);
 }
 
-// Update the physical HTML scoreboard
 function updateScoreboard() {
     playerScoreElement.textContent = playerScore;
     opponentScoreElement.textContent = opponentScore;
 }
 
-// Show a score message in the physical scoreboard and trigger the full-game flash.
-function triggerScoreEffect(playerWon) {
-    scoreStatusElement.textContent = playerWon ? "PLAYER SCORED!" : "AI SCORED!";
-    scoreStatusElement.style.color = playerWon ? "#00A8FF" : "#FF4D6D";
-
-    scoreFlashElement.classList.remove("ai", "player");
-
-    // Force the browser to restart the CSS animation on consecutive points.
-    void scoreFlashElement.offsetWidth;
-
-    scoreFlashElement.classList.add(playerWon ? "player" : "ai");
-
-    if (scoreEffectTimer) {
-        clearTimeout(scoreEffectTimer);
-    }
-
-    scoreEffectTimer = setTimeout(function() {
-        if (!gameOver) {
-            scoreStatusElement.textContent = "PLAY";
-            scoreStatusElement.style.color = "#9CA3AF";
-        }
-    }, 1450);
-}
-
-// Update the ball position and handle collisions
+// Update ball movement and collisions.
 function updateBall() {
-    if (gameOver) {
-        return;
-    }
+    if (gameOver || transitionActive || !ball.visible) return;
 
     rallyTime = (performance.now() - rallyStartTime) / 1000;
+
+    // Continuously accelerate while the rally lasts.
+    const currentSpeed = getCurrentBallSpeed();
+    const currentMagnitude = Math.sqrt(
+        ball.velocityX * ball.velocityX + ball.velocityY * ball.velocityY
+    );
+
+    if (currentMagnitude > 0) {
+        const speedScale = currentSpeed / currentMagnitude;
+        ball.velocityX *= speedScale;
+        ball.velocityY *= speedScale;
+    }
 
     ball.x += ball.velocityX;
     ball.y += ball.velocityY;
 
     // Bounce off left and right walls.
-    if (ball.x - ball.size / 2 <= 0 || ball.x + ball.size / 2 >= canvas.width) {
+    if (
+        ball.x - ball.size / 2 <= 0 ||
+        ball.x + ball.size / 2 >= canvas.width
+    ) {
         ball.velocityX = -ball.velocityX;
         ball.x = Math.max(
             ball.size / 2,
@@ -319,115 +361,99 @@ function updateBall() {
     const ballTop = ball.y - ball.size / 2;
     const ballBottom = ball.y + ball.size / 2;
 
-    // Player paddle edges
-    const playerLeft = player.x;
-    const playerRight = player.x + player.width;
-    const playerTop = player.y;
-    const playerBottom = player.y + player.height;
-
-    // Player paddle collision
+    // Player paddle collision.
     if (
-        ballBottom >= playerTop &&
-        ballTop <= playerBottom &&
-        ballRight >= playerLeft &&
-        ballLeft <= playerRight &&
+        ballBottom >= player.y &&
+        ballTop <= player.y + player.height &&
+        ballRight >= player.x &&
+        ballLeft <= player.x + player.width &&
         ball.velocityY > 0
     ) {
         const hitPosition =
             (ball.x - (player.x + player.width / 2)) /
             (player.width / 2);
 
-        const currentSpeed = getCurrentBallSpeed();
-        const baseAngle = hitPosition * 1.0;
         const unpredictability = Math.min(rallyTime / 18, 1);
         const randomAngle =
             (Math.random() * 2 - 1) * 0.28 * unpredictability;
-        const finalAngle = baseAngle + randomAngle;
+        const finalAngle = hitPosition * 1.0 + randomAngle;
 
         ball.velocityX = Math.sin(finalAngle) * currentSpeed;
         ball.velocityY = -Math.cos(finalAngle) * currentSpeed;
-        ball.y = playerTop - ball.size / 2;
+        ball.y = player.y - ball.size / 2;
     }
 
-    // Opponent paddle edges
-    const opponentLeft = opponent.x;
-    const opponentRight = opponent.x + opponent.width;
-    const opponentTop = opponent.y;
-    const opponentBottom = opponent.y + opponent.height;
-
-    // Opponent paddle collision
+    // Opponent paddle collision.
     if (
-        ballTop <= opponentBottom &&
-        ballBottom >= opponentTop &&
-        ballRight >= opponentLeft &&
-        ballLeft <= opponentRight &&
+        ballTop <= opponent.y + opponent.height &&
+        ballBottom >= opponent.y &&
+        ballRight >= opponent.x &&
+        ballLeft <= opponent.x + opponent.width &&
         ball.velocityY < 0
     ) {
         const hitPosition =
             (ball.x - (opponent.x + opponent.width / 2)) /
             (opponent.width / 2);
 
-        const currentSpeed = getCurrentBallSpeed();
-        const baseAngle = hitPosition * 1.0;
         const unpredictability = Math.min(rallyTime / 18, 1);
         const randomAngle =
             (Math.random() * 2 - 1) * 0.28 * unpredictability;
-        const finalAngle = baseAngle + randomAngle;
+        const finalAngle = hitPosition * 1.0 + randomAngle;
 
         ball.velocityX = Math.sin(finalAngle) * currentSpeed;
         ball.velocityY = Math.cos(finalAngle) * currentSpeed;
-        ball.y = opponentBottom + ball.size / 2;
+        ball.y = opponent.y + opponent.height + ball.size / 2;
     }
 
-    // Player loses if the ball passes the bottom edge
-    if (ballTop > canvas.height) {
-        scorePoint(false);
-    }
+    // Player loses if the ball passes the bottom edge.
+    if (ballTop > canvas.height) scorePoint(false);
 
-    // Opponent loses if the ball passes the top edge
-    if (ballBottom < 0) {
-        scorePoint(true);
-    }
+    // AI loses if the ball passes the top edge.
+    if (ballBottom < 0) scorePoint(true);
 }
 
-// Restart the complete match
-function restartGame() {
-    playerScore = 0;
-    opponentScore = 0;
-    gameOver = false;
-    updateScoreboard();
-    scoreStatusElement.textContent = "READY";
-    scoreStatusElement.style.color = "#9CA3AF";
-    resetBall(-1);
-}
-
-// Draw the player paddle
+// Draw the player paddle.
 function drawPlayer() {
     ctx.fillStyle = "#00A8FF";
     ctx.fillRect(player.x, player.y, player.width, player.height);
 }
 
-// Draw the opponent paddle
+// Draw the opponent paddle.
 function drawOpponent() {
     ctx.fillStyle = "#FF4D6D";
     ctx.fillRect(opponent.x, opponent.y, opponent.width, opponent.height);
 }
 
-// Draw the ball as a circle
+// Draw the ball as a circle.
 function drawBall() {
+    if (!ball.visible) return;
+
     ctx.fillStyle = "white";
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.size / 2, 0, Math.PI * 2);
     ctx.fill();
 }
 
-// Main game loop
+// Restart the complete match.
+function restartGame() {
+    playerScore = 0;
+    opponentScore = 0;
+    gameOver = false;
+    transitionActive = false;
+    transitionPhase = "none";
+    updateScoreboard();
+    setStatus("PLAY", "#9CA3AF");
+    launchBall(-1);
+}
+
+// Main game loop.
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     updatePlayer();
     updateOpponent();
     updateBall();
+    updateTransition();
 
     drawPlayer();
     drawOpponent();
@@ -437,6 +463,6 @@ function gameLoop() {
 }
 
 updateScoreboard();
-scoreStatusElement.textContent = "READY";
+setStatus("PLAY", "#9CA3AF");
 launchBall(-1);
 gameLoop();
