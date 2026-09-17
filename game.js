@@ -6,6 +6,7 @@ const playerScoreElement = document.getElementById("playerScore");
 const opponentScoreElement = document.getElementById("opponentScore");
 const scoreStatusElement = document.getElementById("scoreStatus");
 const scoreFlashElement = document.getElementById("scoreFlash");
+const gameAnnouncementElement = document.getElementById("gameAnnouncement");
 
 // Player paddle
 const player = {
@@ -53,15 +54,14 @@ let opponentScore = 0;
 const winningScore = 5;
 let gameOver = false;
 
-// Post-score sequence
+// Post-score sequence timings
 let transitionActive = false;
 let transitionPhase = "none";
 let transitionStartTime = 0;
-let nextBallDirection = -1;
 
-const scoreFlashDuration = 1000;
-const readyDuration = 420;
-const goDuration = 420;
+const scoreDuration = 1000; // AI SCORED! / PLAYER SCORED!
+const readyDuration = 3000; // READY!
+const goDuration = 2000;    // GO!
 
 // Keyboard controls
 let leftPressed = false;
@@ -203,10 +203,11 @@ function getCurrentBallSpeed() {
     );
 }
 
-// Launch the ball from the center with a random direction.
-function launchBall(direction) {
+// Launch the ball from the center with a random horizontal and vertical direction.
+function launchBall() {
     const speed = startingBallSpeed;
     const angle = Math.random() * 0.55 - 0.275;
+    const direction = Math.random() < 0.5 ? -1 : 1;
 
     ball.x = canvas.width / 2;
     ball.y = canvas.height / 2;
@@ -220,8 +221,8 @@ function launchBall(direction) {
     nextAiErrorUpdate = performance.now() + 1000;
 }
 
-// Prepare the next rally. The ball stays hidden during the sequence.
-function resetBall(direction) {
+// Hide everything gameplay-related and prepare the post-score sequence.
+function resetBallAfterScore() {
     player.x = canvas.width / 2 - player.width / 2;
     opponent.x = canvas.width / 2 - opponent.width / 2;
 
@@ -231,62 +232,73 @@ function resetBall(direction) {
     ball.velocityY = 0;
     ball.visible = false;
 
-    nextBallDirection = direction;
     transitionActive = true;
     transitionPhase = "score";
     transitionStartTime = performance.now();
-
-    triggerScoreFlash(direction === 1 ? "player" : "ai");
 }
 
-// Update SCORE -> READY -> GO.
+// Restart the center announcement animation with a new message.
+function showAnnouncement(text, color, animationClass) {
+    gameAnnouncementElement.classList.remove(
+        "show-score",
+        "show-ready",
+        "show-go"
+    );
+
+    // Force reflow so the same animation can run again on the next point.
+    void gameAnnouncementElement.offsetWidth;
+
+    gameAnnouncementElement.textContent = text;
+    gameAnnouncementElement.style.color = color;
+    gameAnnouncementElement.classList.add(animationClass);
+}
+
+// Update SCORE -> READY -> GO, keeping paddles and ball hidden until GO ends.
 function updateTransition() {
     if (!transitionActive || gameOver) return;
 
     const elapsed = performance.now() - transitionStartTime;
 
-    if (transitionPhase === "score" && elapsed >= scoreFlashDuration) {
+    if (transitionPhase === "score" && elapsed >= scoreDuration) {
         transitionPhase = "ready";
         transitionStartTime = performance.now();
-        setStatus("READY!", "#FFFFFF");
+        showAnnouncement("READY!", "#FFFFFF", "show-ready");
         return;
     }
 
     if (transitionPhase === "ready" && elapsed >= readyDuration) {
         transitionPhase = "go";
         transitionStartTime = performance.now();
-        setStatus("GO!", "#FFFFFF");
+        showAnnouncement("GO!", "#FFFFFF", "show-go");
         return;
     }
 
     if (transitionPhase === "go" && elapsed >= goDuration) {
         transitionActive = false;
         transitionPhase = "none";
-        setStatus("PLAY", "#9CA3AF");
-        launchBall(nextBallDirection);
+        gameAnnouncementElement.classList.remove("show-go");
+        gameAnnouncementElement.textContent = "";
+        scoreStatusElement.textContent = "";
+
+        // Paddles and ball become visible on the same frame.
+        player.x = canvas.width / 2 - player.width / 2;
+        opponent.x = canvas.width / 2 - opponent.width / 2;
+        launchBall();
     }
 }
 
-// Put the current match state in the physical scoreboard.
-function setStatus(text, color) {
-    scoreStatusElement.textContent = text;
-    scoreStatusElement.style.color = color;
-}
+// Trigger the score sequence. The flash and announcement are confined to the game frame.
+function triggerScoreSequence(playerWon) {
+    const winnerClass = playerWon ? "player" : "ai";
+    const winnerText = playerWon ? "PLAYER SCORED!" : "AI SCORED!";
+    const winnerColor = playerWon ? "#00A8FF" : "#FF4D6D";
 
-// Trigger a center-out red/blue flash over the entire game area.
-function triggerScoreFlash(winner) {
     scoreFlashElement.classList.remove("ai", "player");
-
-    // Force a reflow so every score restarts the animation.
     void scoreFlashElement.offsetWidth;
+    scoreFlashElement.classList.add(winnerClass);
 
-    scoreFlashElement.classList.add(winner);
-
-    if (winner === "player") {
-        setStatus("PLAYER SCORED!", "#00A8FF");
-    } else {
-        setStatus("AI SCORED!", "#FF4D6D");
-    }
+    showAnnouncement(winnerText, winnerColor, "show-score");
+    scoreStatusElement.textContent = "";
 }
 
 // Register a point and begin the transition sequence.
@@ -307,15 +319,20 @@ function scorePoint(playerWon) {
         ball.velocityY = 0;
         ball.visible = false;
 
-        if (playerWon) {
-            setStatus("PLAYER SCORED! • YOU WIN!", "#00A8FF");
-        } else {
-            setStatus("AI SCORED! • AI WINS!", "#FF4D6D");
-        }
+        const winnerText = playerWon
+            ? "PLAYER SCORED!\nYOU WIN!"
+            : "AI SCORED!\nAI WINS!";
+        const winnerColor = playerWon ? "#00A8FF" : "#FF4D6D";
+
+        scoreFlashElement.classList.remove("ai", "player");
+        void scoreFlashElement.offsetWidth;
+        scoreFlashElement.classList.add(playerWon ? "player" : "ai");
+        showAnnouncement(winnerText, winnerColor, "show-score");
         return;
     }
 
-    resetBall(playerWon ? 1 : -1);
+    resetBallAfterScore();
+    triggerScoreSequence(playerWon);
 }
 
 function updateScoreboard() {
@@ -414,19 +431,21 @@ function updateBall() {
 
 // Draw the player paddle.
 function drawPlayer() {
+    if (transitionActive || gameOver) return;
     ctx.fillStyle = "#00A8FF";
     ctx.fillRect(player.x, player.y, player.width, player.height);
 }
 
 // Draw the opponent paddle.
 function drawOpponent() {
+    if (transitionActive || gameOver) return;
     ctx.fillStyle = "#FF4D6D";
     ctx.fillRect(opponent.x, opponent.y, opponent.width, opponent.height);
 }
 
 // Draw the ball as a circle.
 function drawBall() {
-    if (!ball.visible) return;
+    if (!ball.visible || transitionActive || gameOver) return;
 
     ctx.fillStyle = "white";
     ctx.beginPath();
@@ -441,9 +460,18 @@ function restartGame() {
     gameOver = false;
     transitionActive = false;
     transitionPhase = "none";
+    gameAnnouncementElement.classList.remove(
+        "show-score",
+        "show-ready",
+        "show-go"
+    );
+    gameAnnouncementElement.textContent = "";
+    scoreFlashElement.classList.remove("ai", "player");
+    scoreStatusElement.textContent = "";
     updateScoreboard();
-    setStatus("PLAY", "#9CA3AF");
-    launchBall(-1);
+    player.x = canvas.width / 2 - player.width / 2;
+    opponent.x = canvas.width / 2 - opponent.width / 2;
+    launchBall();
 }
 
 // Main game loop.
@@ -463,6 +491,6 @@ function gameLoop() {
 }
 
 updateScoreboard();
-setStatus("PLAY", "#9CA3AF");
-launchBall(-1);
+scoreStatusElement.textContent = "";
+launchBall();
 gameLoop();
