@@ -41,11 +41,12 @@
 
         .scoreboard {
             width: min(800px, 95vw, calc((100vh - 150px) * 4 / 3));
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            grid-template-rows: auto auto;
             align-items: center;
             margin-bottom: 10px;
-            padding: 12px 24px;
+            padding: 12px 24px 10px;
             border: 1px solid #263248;
             border-radius: 10px;
             background: #0D1322;
@@ -89,7 +90,20 @@
             font-size: 20px;
         }
 
+        .score-status {
+            grid-column: 1 / 4;
+            margin-top: 8px;
+            min-height: 16px;
+            color: #9CA3AF;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
         .game-wrapper {
+            position: relative;
             width: min(800px, 95vw, calc((100vh - 150px) * 4 / 3));
         }
 
@@ -103,6 +117,70 @@
             background: #05070D;
             touch-action: none;
             box-shadow: 0 0 24px rgba(0, 168, 255, 0.12);
+        }
+
+        /* Full-game-space score flash. The message itself stays in the scoreboard. */
+        .score-flash {
+            position: absolute;
+            inset: 0;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 2;
+        }
+
+        .score-flash.ai {
+            animation: aiScoreFlash 1.45s ease-out;
+        }
+
+        .score-flash.player {
+            animation: playerScoreFlash 1.45s ease-out;
+        }
+
+        @keyframes aiScoreFlash {
+            0% {
+                opacity: 0;
+                background: radial-gradient(circle at center, rgba(255, 40, 70, 0) 0%, rgba(255, 40, 70, 0) 8%, rgba(255, 40, 70, 0) 100%);
+            }
+            35% {
+                opacity: 0.28;
+                background: radial-gradient(circle at center, rgba(255, 40, 70, 0.85) 0%, rgba(255, 40, 70, 0.45) 25%, rgba(255, 40, 70, 0.15) 55%, rgba(255, 40, 70, 0) 100%);
+            }
+            72% {
+                opacity: 0.48;
+                background: radial-gradient(circle at center, rgba(255, 40, 70, 0.95) 0%, rgba(255, 40, 70, 0.65) 45%, rgba(255, 40, 70, 0.35) 100%);
+            }
+            80% {
+                opacity: 0.72;
+                background: rgba(255, 40, 70, 0.9);
+            }
+            100% {
+                opacity: 0;
+                background: rgba(255, 40, 70, 0.9);
+            }
+        }
+
+        @keyframes playerScoreFlash {
+            0% {
+                opacity: 0;
+                background: radial-gradient(circle at center, rgba(0, 168, 255, 0) 0%, rgba(0, 168, 255, 0) 8%, rgba(0, 168, 255, 0) 100%);
+            }
+            35% {
+                opacity: 0.28;
+                background: radial-gradient(circle at center, rgba(0, 168, 255, 0.85) 0%, rgba(0, 168, 255, 0.45) 25%, rgba(0, 168, 255, 0.15) 55%, rgba(0, 168, 255, 0) 100%);
+            }
+            72% {
+                opacity: 0.48;
+                background: radial-gradient(circle at center, rgba(0, 168, 255, 0.95) 0%, rgba(0, 168, 255, 0.65) 45%, rgba(0, 168, 255, 0.35) 100%);
+            }
+            80% {
+                opacity: 0.72;
+                background: rgba(0, 168, 255, 0.9);
+            }
+            100% {
+                opacity: 0;
+                background: rgba(0, 168, 255, 0.9);
+            }
         }
 
         .controls-hint {
@@ -131,10 +209,13 @@
             <span class="score-value score-ai" id="opponentScore">0</span>
             <span class="score-label">AI</span>
         </div>
+
+        <div class="score-status" id="scoreStatus">READY</div>
     </div>
 
     <div class="game-wrapper">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="score-flash" id="scoreFlash"></div>
     </div>
 
     <p class="controls-hint">Desktop: A / D or ← / → • Mobile: slide your finger across the game</p>
