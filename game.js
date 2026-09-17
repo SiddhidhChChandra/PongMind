@@ -19,6 +19,15 @@ const opponent = {
     speed: 5
 };
 
+// Ball
+const ball = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    size: 12,
+    velocityX: 5,
+    velocityY: -3
+};
+
 // Keyboard controls
 let leftPressed = false;
 let rightPressed = false;
@@ -136,6 +145,12 @@ function updatePlayer() {
     }
 }
 
+// Update the ball position
+function updateBall() {
+    ball.x += ball.velocityX;
+    ball.y += ball.velocityY;
+}
+
 // Draw the player paddle
 function drawPlayer() {
 
@@ -162,14 +177,30 @@ function drawOpponent() {
     );
 }
 
+// Draw the ball
+function drawBall() {
+
+    ctx.fillStyle = "white";
+
+    ctx.fillRect(
+        ball.x - ball.size / 2,
+        ball.y - ball.size / 2,
+        ball.size,
+        ball.size
+    );
+}
+
 // Game loop
 function gameLoop() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     updatePlayer();
+    updateBall();
+
     drawPlayer();
     drawOpponent();
+    drawBall();
 
     requestAnimationFrame(gameLoop);
 }
