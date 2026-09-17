@@ -145,15 +145,21 @@ function updatePlayer() {
     }
 }
 
-// Move the opponent toward the ball
+// Move the opponent toward where the ball is heading
 function updateOpponent() {
 
-    if (ball.x < opponent.x) {
-        opponent.x -= opponent.speed;
-    }
+    // Only track the ball while it is moving toward the opponent.
+    // This prevents the AI from constantly sweeping after the ball passes it.
+    if (ball.velocityY < 0) {
+        const opponentCenter = opponent.x + opponent.width / 2;
 
-    if (ball.x > opponent.x + opponent.width) {
-        opponent.x += opponent.speed;
+        if (ball.x < opponentCenter) {
+            opponent.x -= opponent.speed;
+        }
+
+        if (ball.x > opponentCenter) {
+            opponent.x += opponent.speed;
+        }
     }
 
     // Keep opponent paddle inside the canvas
@@ -196,7 +202,21 @@ function updateBall() {
         ballLeft <= playerRight &&
         ball.velocityY > 0
     ) {
-        ball.velocityY = -ball.velocityY;
+        // Find where the ball hit the paddle.
+        // -1 = far left, 0 = center, +1 = far right
+        const hitPosition =
+            (ball.x - (player.x + player.width / 2)) /
+            (player.width / 2);
+
+        // Change the horizontal direction based on the hit position.
+        ball.velocityX = hitPosition * 6;
+
+        // Keep a small horizontal component on a center hit.
+        if (Math.abs(ball.velocityX) < 1.5) {
+            ball.velocityX = ball.velocityX >= 0 ? 1.5 : -1.5;
+        }
+
+        ball.velocityY = -Math.abs(ball.velocityY);
 
         // Move the ball just above the paddle to prevent repeated collision
         ball.y = playerTop - ball.size / 2;
@@ -216,7 +236,20 @@ function updateBall() {
         ballLeft <= opponentRight &&
         ball.velocityY < 0
     ) {
-        ball.velocityY = -ball.velocityY;
+        // Find where the ball hit the opponent paddle.
+        const hitPosition =
+            (ball.x - (opponent.x + opponent.width / 2)) /
+            (opponent.width / 2);
+
+        // Change horizontal direction based on the hit position.
+        ball.velocityX = hitPosition * 6;
+
+        // Keep a small horizontal component on a center hit.
+        if (Math.abs(ball.velocityX) < 1.5) {
+            ball.velocityX = ball.velocityX >= 0 ? 1.5 : -1.5;
+        }
+
+        ball.velocityY = Math.abs(ball.velocityY);
 
         // Move the ball just below the paddle to prevent repeated collision
         ball.y = opponentBottom + ball.size / 2;
