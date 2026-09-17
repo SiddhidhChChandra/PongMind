@@ -4,6 +4,12 @@ PongMind is an AI-powered Pong game that combines game development with artifici
 
 The project starts with a basic Pong implementation and gradually evolves into a game featuring adaptive AI opponents, multiple difficulty levels, power-ups, and eventually a reinforcement learning agent.
 
+## 🎮 Play PongMind
+
+**Live game:** https://siddhidhchchandra.github.io/PongMind/
+
+Click the link to open the playable web version. The game now starts with a simple start screen instead of immediately launching the rally.
+
 ## 🎯 Project Goal
 
 The goal of PongMind is to build a playable Pong game where the player competes against an AI opponent.
@@ -12,9 +18,9 @@ The AI will progressively become more advanced throughout development, eventuall
 
 ## 🚧 Current Status
 
-**Day 3 — Core Gameplay & Rule-Based AI**
+**Day 3 — Core Gameplay & Rule-Based AI — COMPLETE ✅**
 
-The core Pong gameplay loop is now functional. The game has a player paddle, AI opponent paddle, circular ball, wall and paddle collision, smooth rule-based AI movement, score tracking, randomized ball launches, and a first-to-5 win condition.
+The core Pong gameplay loop is functional. The game includes a player paddle, AI opponent paddle, circular ball, wall and paddle collision, smooth rule-based AI movement, increasing ball speed, score tracking, randomized ball launches, a first-to-5 win condition, polished score transitions, rounded neon gameplay elements, and a start screen.
 
 ### Development Progress
 
@@ -38,10 +44,17 @@ The core Pong gameplay loop is now functional. The game has a player paddle, AI 
 - [x] Make ball circular
 - [x] Add hit-position-based ball direction
 - [x] Add smooth rule-based AI opponent
-- [x] Increase ball speed
+- [x] Increase ball speed during rallies
 - [x] Add score tracking
 - [x] Add point reset and randomized launches
 - [x] Add first-to-5 win condition
+- [x] Add score transition sequence
+- [x] Add centered score announcements
+- [x] Add READY / GO transition
+- [x] Add rounded neon paddles and ball
+- [x] Add game start screen
+- [x] Add live game link
+- [x] Document Day 3 completion
 - [ ] Add difficulty levels
 - [ ] Add dynamic difficulty-based ball speed
 - [ ] Add power-up system
@@ -140,8 +153,6 @@ PongMind is being developed incrementally.
 Each development step follows:
 
 **PLAN → IMPLEMENT → TEST → DOCUMENT → COMMIT**
-
-The project will begin with a simple playable Pong prototype before adding AI, difficulty systems, power-ups, reinforcement learning, mobile support, and deployment.
 
 ## 🚀 Future Improvements
 
