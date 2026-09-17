@@ -31,6 +31,8 @@
         .game-announcement.show-score { animation:announcementScore 1000ms ease-in-out forwards; }
         .game-announcement.show-ready { animation:announcementReady 2000ms ease-in-out forwards; }
         .game-announcement.show-go { animation:announcementGo 1000ms ease-in-out forwards; }
+        .game-announcement.start-prompt { opacity:1; animation:startPrompt 1800ms ease-in-out infinite; }
+        @keyframes startPrompt { 0%,100%{opacity:.45;transform:scale(.98)} 50%{opacity:1;transform:scale(1.02)} }
         @keyframes announcementScore { 0%{opacity:0;transform:scale(.88)} 18%{opacity:1;transform:scale(1)} 62%{opacity:1;transform:scale(1.02)} 100%{opacity:0;transform:scale(1.06)} }
         @keyframes announcementReady { 0%{opacity:0;transform:scale(.94)} 18%{opacity:1;transform:scale(1)} 70%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.04)} }
         @keyframes announcementGo { 0%{opacity:0;transform:scale(.9)} 22%{opacity:1;transform:scale(1)} 68%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.08)} }
