@@ -39,8 +39,58 @@
             text-align: center;
         }
 
+        .scoreboard {
+            width: min(800px, 95vw, calc((100vh - 150px) * 4 / 3));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 12px 24px;
+            border: 1px solid #263248;
+            border-radius: 10px;
+            background: #0D1322;
+            box-shadow: 0 0 18px rgba(0, 0, 0, 0.25);
+        }
+
+        .score-side {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 120px;
+        }
+
+        .score-side:last-child {
+            justify-content: flex-end;
+        }
+
+        .score-label {
+            color: #9CA3AF;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .score-value {
+            font-size: 30px;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .score-player {
+            color: #00A8FF;
+        }
+
+        .score-ai {
+            color: #FF4D6D;
+        }
+
+        .score-divider {
+            color: #4B5563;
+            font-size: 20px;
+        }
+
         .game-wrapper {
-            width: min(800px, 95vw, calc((100vh - 105px) * 4 / 3));
+            width: min(800px, 95vw, calc((100vh - 150px) * 4 / 3));
         }
 
         canvas {
@@ -68,6 +118,20 @@
 
     <h1 class="game-title">PongMind</h1>
     <p class="game-subtitle">AI-powered Pong • Day 3 Prototype</p>
+
+    <div class="scoreboard">
+        <div class="score-side">
+            <span class="score-label">You</span>
+            <span class="score-value score-player" id="playerScore">0</span>
+        </div>
+
+        <span class="score-divider">:</span>
+
+        <div class="score-side">
+            <span class="score-value score-ai" id="opponentScore">0</span>
+            <span class="score-label">AI</span>
+        </div>
+    </div>
 
     <div class="game-wrapper">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
