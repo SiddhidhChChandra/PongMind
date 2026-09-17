@@ -29,6 +29,7 @@ let transitionActive = false;
 let transitionPhase = "none";
 let transitionStartTime = 0;
 
+const startIntroDuration = 1400;
 const scoreDuration = 1000;
 const readyDuration = 2000;
 const goDuration = 1000;
@@ -143,11 +144,13 @@ function startGame() {
     if (gameStarted) return;
     gameStarted = true;
     gameOver = false;
-    gameAnnouncementElement.classList.remove("show-score", "show-ready", "show-go");
-    gameAnnouncementElement.textContent = "";
+    transitionActive = true;
+    transitionPhase = "start-intro";
+    transitionStartTime = performance.now();
+    ball.visible = false;
     player.x = canvas.width / 2 - player.width / 2;
     opponent.x = canvas.width / 2 - opponent.width / 2;
-    launchBall();
+    showAnnouncement("FIRST TO SCORE 5 WINS", "#FFFFFF", "show-score");
 }
 
 function resetBallAfterScore() {
@@ -174,6 +177,13 @@ function showAnnouncement(text, color, animationClass) {
 function updateTransition() {
     if (!transitionActive || gameOver) return;
     const elapsed = performance.now() - transitionStartTime;
+
+    if (transitionPhase === "start-intro" && elapsed >= startIntroDuration) {
+        transitionPhase = "ready";
+        transitionStartTime = performance.now();
+        showAnnouncement("READY!", "#FFFFFF", "show-ready");
+        return;
+    }
     if (transitionPhase === "score" && elapsed >= scoreDuration) {
         transitionPhase = "ready";
         transitionStartTime = performance.now();
@@ -220,19 +230,22 @@ function scorePoint(playerWon) {
     if (playerWon) playerScore++;
     else opponentScore++;
     updateScoreboard(playerWon ? "player" : "ai");
+
     if (playerScore >= winningScore || opponentScore >= winningScore) {
         gameOver = true;
         ball.velocityX = 0;
         ball.velocityY = 0;
         ball.visible = false;
-        const winnerText = playerWon ? "PLAYER SCORED!" : "AI SCORED!";
+        const winnerText = playerWon ? "YOU WIN!" : "AI WINS!";
         const winnerColor = playerWon ? "#00A8FF" : "#FF4D6D";
         scoreFlashElement.classList.remove("ai", "player");
         void scoreFlashElement.offsetWidth;
         scoreFlashElement.classList.add(playerWon ? "player" : "ai");
-        showAnnouncement(winnerText + " " + (playerWon ? "YOU WIN!" : "AI WINS!"), winnerColor, "show-score");
+        showAnnouncement(winnerText, winnerColor, "show-ready");
+        scoreStatusElement.textContent = "PRESS SPACE TO PLAY AGAIN";
         return;
     }
+
     resetBallAfterScore();
     triggerScoreSequence(playerWon);
 }
@@ -256,14 +269,17 @@ function updateBall() {
     }
     ball.x += ball.velocityX;
     ball.y += ball.velocityY;
+
     if (ball.x - ball.size / 2 <= 0 || ball.x + ball.size / 2 >= canvas.width) {
         ball.velocityX = -ball.velocityX;
         ball.x = Math.max(ball.size / 2, Math.min(canvas.width - ball.size / 2, ball.x));
     }
+
     const ballLeft = ball.x - ball.size / 2;
     const ballRight = ball.x + ball.size / 2;
     const ballTop = ball.y - ball.size / 2;
     const ballBottom = ball.y + ball.size / 2;
+
     if (ballBottom >= player.y && ballTop <= player.y + player.height && ballRight >= player.x && ballLeft <= player.x + player.width && ball.velocityY > 0) {
         const hitPosition = (ball.x - (player.x + player.width / 2)) / (player.width / 2);
         const unpredictability = Math.min(rallyTime / 18, 1);
@@ -273,6 +289,7 @@ function updateBall() {
         ball.velocityY = -Math.cos(finalAngle) * currentSpeed;
         ball.y = player.y - ball.size / 2;
     }
+
     if (ballTop <= opponent.y + opponent.height && ballBottom >= opponent.y && ballRight >= opponent.x && ballLeft <= opponent.x + opponent.width && ball.velocityY < 0) {
         const hitPosition = (ball.x - (opponent.x + opponent.width / 2)) / (opponent.width / 2);
         const unpredictability = Math.min(rallyTime / 18, 1);
@@ -282,6 +299,7 @@ function updateBall() {
         ball.velocityY = Math.cos(finalAngle) * currentSpeed;
         ball.y = opponent.y + opponent.height + ball.size / 2;
     }
+
     if (ballTop > canvas.height) scorePoint(false);
     if (ballBottom < 0) scorePoint(true);
 }
@@ -318,16 +336,16 @@ function restartGame() {
     opponentScore = 0;
     gameOver = false;
     gameStarted = true;
-    transitionActive = false;
-    transitionPhase = "none";
-    gameAnnouncementElement.classList.remove("show-score", "show-ready", "show-go", "start-prompt");
-    gameAnnouncementElement.textContent = "";
+    transitionActive = true;
+    transitionPhase = "start-intro";
+    transitionStartTime = performance.now();
     scoreFlashElement.classList.remove("ai", "player");
     scoreStatusElement.textContent = "";
     updateScoreboard();
     player.x = canvas.width / 2 - player.width / 2;
     opponent.x = canvas.width / 2 - opponent.width / 2;
-    launchBall();
+    ball.visible = false;
+    showAnnouncement("FIRST TO SCORE 5 WINS", "#FFFFFF", "show-score");
 }
 
 function gameLoop() {
