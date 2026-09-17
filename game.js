@@ -4,6 +4,8 @@ const ctx = canvas.getContext("2d");
 // Physical HTML scoreboard
 const playerScoreElement = document.getElementById("playerScore");
 const opponentScoreElement = document.getElementById("opponentScore");
+const scoreStatusElement = document.getElementById("scoreStatus");
+const scoreFlashElement = document.getElementById("scoreFlash");
 
 // Player paddle
 const player = {
@@ -49,6 +51,7 @@ let playerScore = 0;
 let opponentScore = 0;
 const winningScore = 5;
 let gameOver = false;
+let scoreEffectTimer = null;
 
 // Keyboard controls
 let leftPressed = false;
@@ -160,9 +163,6 @@ function updatePlayer() {
 // Calculate how unpredictable the AI becomes during a long rally.
 function updateAIUnpredictability() {
     const unpredictability = Math.min(rallyTime / 18, 1);
-
-    // Early rally: almost no error.
-    // Later rally: the AI increasingly misjudges the target position.
     const maximumError = 75;
 
     if (performance.now() >= nextAiErrorUpdate) {
@@ -202,7 +202,6 @@ function updateOpponent() {
 }
 
 // Return the current speed of the ball.
-// The ball starts slow and continuously accelerates during the rally.
 function getCurrentBallSpeed() {
     return Math.min(
         startingBallSpeed + rallyTime * speedIncreasePerSecond,
@@ -233,26 +232,6 @@ function resetBall(direction) {
     launchBall(direction);
 }
 
-// Apply a little more unpredictability to the ball after a paddle hit.
-// The randomness starts tiny and grows as the rally gets longer.
-function applyRallyUnpredictability(direction) {
-    const unpredictability = Math.min(rallyTime / 18, 1);
-    const maximumAngleChange = 0.28;
-    const randomAngleChange =
-        (Math.random() * 2 - 1) * maximumAngleChange * unpredictability;
-
-    const currentSpeed = getCurrentBallSpeed();
-    const currentAngle = Math.atan2(
-        ball.velocityX,
-        Math.abs(ball.velocityY)
-    );
-
-    const newAngle = currentAngle + randomAngleChange;
-
-    ball.velocityX = Math.sin(newAngle) * currentSpeed;
-    ball.velocityY = direction * Math.cos(newAngle) * currentSpeed;
-}
-
 // Register a point and check for a winner
 function scorePoint(playerWon) {
     if (playerWon) {
@@ -262,11 +241,19 @@ function scorePoint(playerWon) {
     }
 
     updateScoreboard();
+    triggerScoreEffect(playerWon);
 
     if (playerScore >= winningScore || opponentScore >= winningScore) {
         gameOver = true;
         ball.velocityX = 0;
         ball.velocityY = 0;
+
+        if (playerWon) {
+            scoreStatusElement.textContent = "PLAYER SCORED! • YOU WIN! • SPACE TO RESTART";
+        } else {
+            scoreStatusElement.textContent = "AI SCORED! • AI WINS! • SPACE TO RESTART";
+        }
+
         return;
     }
 
@@ -281,6 +268,30 @@ function scorePoint(playerWon) {
 function updateScoreboard() {
     playerScoreElement.textContent = playerScore;
     opponentScoreElement.textContent = opponentScore;
+}
+
+// Show a score message in the physical scoreboard and trigger the full-game flash.
+function triggerScoreEffect(playerWon) {
+    scoreStatusElement.textContent = playerWon ? "PLAYER SCORED!" : "AI SCORED!";
+    scoreStatusElement.style.color = playerWon ? "#00A8FF" : "#FF4D6D";
+
+    scoreFlashElement.classList.remove("ai", "player");
+
+    // Force the browser to restart the CSS animation on consecutive points.
+    void scoreFlashElement.offsetWidth;
+
+    scoreFlashElement.classList.add(playerWon ? "player" : "ai");
+
+    if (scoreEffectTimer) {
+        clearTimeout(scoreEffectTimer);
+    }
+
+    scoreEffectTimer = setTimeout(function() {
+        if (!gameOver) {
+            scoreStatusElement.textContent = "PLAY";
+            scoreStatusElement.style.color = "#9CA3AF";
+        }
+    }, 1450);
 }
 
 // Update the ball position and handle collisions
@@ -335,7 +346,6 @@ function updateBall() {
 
         ball.velocityX = Math.sin(finalAngle) * currentSpeed;
         ball.velocityY = -Math.cos(finalAngle) * currentSpeed;
-
         ball.y = playerTop - ball.size / 2;
     }
 
@@ -366,7 +376,6 @@ function updateBall() {
 
         ball.velocityX = Math.sin(finalAngle) * currentSpeed;
         ball.velocityY = Math.cos(finalAngle) * currentSpeed;
-
         ball.y = opponentBottom + ball.size / 2;
     }
 
@@ -387,6 +396,8 @@ function restartGame() {
     opponentScore = 0;
     gameOver = false;
     updateScoreboard();
+    scoreStatusElement.textContent = "READY";
+    scoreStatusElement.style.color = "#9CA3AF";
     resetBall(-1);
 }
 
@@ -410,24 +421,6 @@ function drawBall() {
     ctx.fill();
 }
 
-// Draw game-over message
-function drawGameOver() {
-    if (!gameOver) {
-        return;
-    }
-
-    const playerWon = playerScore >= winningScore;
-    const message = playerWon ? "YOU WIN!" : "AI WINS!";
-
-    ctx.fillStyle = "white";
-    ctx.font = "bold 42px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(message, canvas.width / 2, canvas.height / 2 - 15);
-
-    ctx.font = "18px Arial";
-    ctx.fillText("Press SPACE to restart", canvas.width / 2, canvas.height / 2 + 25);
-}
-
 // Main game loop
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -439,11 +432,11 @@ function gameLoop() {
     drawPlayer();
     drawOpponent();
     drawBall();
-    drawGameOver();
 
     requestAnimationFrame(gameLoop);
 }
 
 updateScoreboard();
+scoreStatusElement.textContent = "READY";
 launchBall(-1);
 gameLoop();
