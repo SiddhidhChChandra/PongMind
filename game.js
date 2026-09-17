@@ -145,10 +145,15 @@ function updatePlayer() {
     }
 }
 
-// Update the ball position
+// Update the ball position and bounce it off the side walls
 function updateBall() {
     ball.x += ball.velocityX;
     ball.y += ball.velocityY;
+
+    // Bounce off the left and right walls
+    if (ball.x - ball.size / 2 <= 0 || ball.x + ball.size / 2 >= canvas.width) {
+        ball.velocityX = -ball.velocityX;
+    }
 }
 
 // Draw the player paddle
