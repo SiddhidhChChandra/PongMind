@@ -80,6 +80,7 @@
             padding: 0 18px;
         }
 
+        /* Kept only as a small status area below the score. */
         .score-status {
             grid-column: 1 / -1;
             min-height: 18px;
@@ -90,12 +91,13 @@
             letter-spacing: 2px;
             text-transform: uppercase;
             color: #9CA3AF;
-            transition: color 0.12s ease, opacity 0.12s ease;
         }
 
         .game-wrapper {
             position: relative;
             width: min(800px, 95vw, calc((100vh - 150px) * 4 / 3));
+            overflow: hidden;
+            border-radius: 8px;
         }
 
         canvas {
@@ -110,40 +112,99 @@
             box-shadow: 0 0 24px rgba(0, 168, 255, 0.12);
         }
 
-        /* This overlay is only used for the score flash. */
+        /* All score effects stay strictly inside the game frame. */
         .score-flash {
             position: absolute;
             inset: 0;
             border-radius: 8px;
             pointer-events: none;
             opacity: 0;
-            transform: scale(0.15);
             z-index: 5;
         }
 
         .score-flash.ai {
-            background: radial-gradient(circle at center,
-                rgba(255, 77, 109, 0.95) 0%,
-                rgba(255, 77, 109, 0.82) 28%,
-                rgba(255, 77, 109, 0.58) 55%,
-                rgba(255, 77, 109, 0) 78%);
+            background: #FF4D6D;
             animation: scoreFlash 1000ms ease-out forwards;
         }
 
         .score-flash.player {
-            background: radial-gradient(circle at center,
-                rgba(0, 168, 255, 0.95) 0%,
-                rgba(0, 168, 255, 0.82) 28%,
-                rgba(0, 168, 255, 0.58) 55%,
-                rgba(0, 168, 255, 0) 78%);
+            background: #00A8FF;
             animation: scoreFlash 1000ms ease-out forwards;
         }
 
         @keyframes scoreFlash {
-            0% { opacity: 0; transform: scale(0.15); }
-            38% { opacity: 1; transform: scale(1.35); }
-            52% { opacity: 1; transform: scale(1.8); }
-            100% { opacity: 0; transform: scale(2.4); }
+            0% {
+                opacity: 0;
+                clip-path: circle(0% at 50% 50%);
+            }
+            25% {
+                opacity: 0.88;
+                clip-path: circle(42% at 50% 50%);
+            }
+            55% {
+                opacity: 0.88;
+                clip-path: circle(100% at 50% 50%);
+            }
+            72% {
+                opacity: 0.55;
+                clip-path: circle(100% at 50% 50%);
+            }
+            100% {
+                opacity: 0;
+                clip-path: circle(100% at 50% 50%);
+            }
+        }
+
+        /* Big announcements appear in the center of the actual game. */
+        .game-announcement {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            pointer-events: none;
+            z-index: 6;
+            opacity: 0;
+            text-align: center;
+            font-size: clamp(32px, 8vw, 72px);
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            text-shadow: 0 0 22px rgba(255, 255, 255, 0.25), 0 4px 18px rgba(0, 0, 0, 0.65);
+        }
+
+        .game-announcement.show-score {
+            animation: announcementScore 1000ms ease-in-out forwards;
+        }
+
+        .game-announcement.show-ready {
+            animation: announcementReady 3000ms ease-in-out forwards;
+        }
+
+        .game-announcement.show-go {
+            animation: announcementGo 2000ms ease-in-out forwards;
+        }
+
+        @keyframes announcementScore {
+            0% { opacity: 0; transform: scale(0.82); }
+            25% { opacity: 1; transform: scale(1); }
+            72% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.08); }
+        }
+
+        @keyframes announcementReady {
+            0% { opacity: 0; transform: scale(0.88); }
+            18% { opacity: 1; transform: scale(1); }
+            78% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.05); }
+        }
+
+        @keyframes announcementGo {
+            0% { opacity: 0; transform: scale(0.88); }
+            22% { opacity: 1; transform: scale(1); }
+            72% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.08); }
         }
 
         .controls-hint {
@@ -179,12 +240,13 @@
             <span class="score-label">AI</span>
         </div>
 
-        <div class="score-status" id="scoreStatus">READY</div>
+        <div class="score-status" id="scoreStatus"></div>
     </div>
 
     <div class="game-wrapper">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div class="score-flash" id="scoreFlash"></div>
+        <div class="game-announcement" id="gameAnnouncement"></div>
     </div>
 
     <p class="controls-hint">Desktop: A / D or ← / → • Mobile: slide your finger across the game</p>
