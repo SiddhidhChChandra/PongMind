@@ -3,254 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-
     <title>PongMind</title>
-
     <style>
         * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            background: #080B14;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 12px;
-            font-family: Arial, sans-serif;
-        }
-
-        .game-title {
-            margin: 0 0 8px;
-            font-size: clamp(24px, 5vw, 32px);
-            letter-spacing: 4px;
-            color: #00A8FF;
-            text-transform: uppercase;
-        }
-
-        .game-subtitle {
-            margin: 0 0 10px;
-            color: #9CA3AF;
-            font-size: 13px;
-            text-align: center;
-        }
-
-        .scoreboard {
-            width: min(800px, 95vw, calc((100vh - 150px) * 4 / 3));
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            margin-bottom: 10px;
-            padding: 12px 24px;
-            border: 1px solid #263248;
-            border-radius: 10px;
-            background: #0D1322;
-            box-shadow: 0 0 18px rgba(0, 0, 0, 0.25);
-        }
-
-        .score-side {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
+        body { margin: 0; background: #080B14; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; padding: 12px; font-family: Arial, sans-serif; }
+        .game-title { margin: 0 0 8px; font-size: clamp(24px, 5vw, 32px); letter-spacing: 4px; color: #00A8FF; text-transform: uppercase; }
+        .game-subtitle { margin: 0 0 10px; color: #9CA3AF; font-size: 13px; text-align: center; }
+        .scoreboard { width: min(800px, 95vw, calc((100vh - 150px) * 4 / 3)); display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 10px; padding: 14px 24px; border: 1px solid #263248; border-radius: 12px; background: #0D1322; box-shadow: 0 0 22px rgba(0,0,0,.28); }
+        .score-side { display: flex; align-items: center; gap: 14px; }
         .score-side:last-child { justify-content: flex-end; }
-
-        .score-label {
-            color: #9CA3AF;
-            font-size: 12px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .score-value {
-            font-size: 30px;
-            font-weight: bold;
-            line-height: 1;
-        }
-
+        .score-label { color: #9CA3AF; font-size: 15px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; font-family: "Trebuchet MS", Arial, sans-serif; }
+        .score-value { font-size: 34px; font-weight: 900; line-height: 1; font-family: "Trebuchet MS", Arial, sans-serif; display: inline-block; }
         .score-player { color: #00A8FF; }
         .score-ai { color: #FF4D6D; }
-
-        .score-divider {
-            color: #4B5563;
-            font-size: 20px;
-            padding: 0 18px;
-        }
-
-        /* Kept only as a small status area below the score. */
-        .score-status {
-            grid-column: 1 / -1;
-            min-height: 18px;
-            margin-top: 7px;
-            text-align: center;
-            font-size: 11px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #9CA3AF;
-        }
-
-        .game-wrapper {
-            position: relative;
-            width: min(800px, 95vw, calc((100vh - 150px) * 4 / 3));
-            overflow: hidden;
-            border-radius: 8px;
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: auto;
-            aspect-ratio: 4 / 3;
-            border: 2px solid #00A8FF;
-            border-radius: 8px;
-            background: #05070D;
-            touch-action: none;
-            box-shadow: 0 0 24px rgba(0, 168, 255, 0.12);
-        }
-
-        /* All score effects stay strictly inside the game frame. */
-        .score-flash {
-            position: absolute;
-            inset: 0;
-            border-radius: 8px;
-            pointer-events: none;
-            opacity: 0;
-            z-index: 5;
-        }
-
-        .score-flash.ai {
-            background: #FF4D6D;
-            animation: scoreFlash 1000ms ease-out forwards;
-        }
-
-        .score-flash.player {
-            background: #00A8FF;
-            animation: scoreFlash 1000ms ease-out forwards;
-        }
-
-        @keyframes scoreFlash {
-            0% {
-                opacity: 0;
-                clip-path: circle(0% at 50% 50%);
-            }
-            25% {
-                opacity: 0.88;
-                clip-path: circle(42% at 50% 50%);
-            }
-            55% {
-                opacity: 0.88;
-                clip-path: circle(100% at 50% 50%);
-            }
-            72% {
-                opacity: 0.55;
-                clip-path: circle(100% at 50% 50%);
-            }
-            100% {
-                opacity: 0;
-                clip-path: circle(100% at 50% 50%);
-            }
-        }
-
-        /* Big announcements appear in the center of the actual game. */
-        .game-announcement {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            pointer-events: none;
-            z-index: 6;
-            opacity: 0;
-            text-align: center;
-            font-size: clamp(32px, 8vw, 72px);
-            font-weight: 900;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            text-shadow: 0 0 22px rgba(255, 255, 255, 0.25), 0 4px 18px rgba(0, 0, 0, 0.65);
-        }
-
-        .game-announcement.show-score {
-            animation: announcementScore 1000ms ease-in-out forwards;
-        }
-
-        .game-announcement.show-ready {
-            animation: announcementReady 3000ms ease-in-out forwards;
-        }
-
-        .game-announcement.show-go {
-            animation: announcementGo 2000ms ease-in-out forwards;
-        }
-
-        @keyframes announcementScore {
-            0% { opacity: 0; transform: scale(0.82); }
-            25% { opacity: 1; transform: scale(1); }
-            72% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(1.08); }
-        }
-
-        @keyframes announcementReady {
-            0% { opacity: 0; transform: scale(0.88); }
-            18% { opacity: 1; transform: scale(1); }
-            78% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(1.05); }
-        }
-
-        @keyframes announcementGo {
-            0% { opacity: 0; transform: scale(0.88); }
-            22% { opacity: 1; transform: scale(1); }
-            72% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(1.08); }
-        }
-
-        .controls-hint {
-            margin: 10px 0 0;
-            color: #6B7280;
-            font-size: 12px;
-            text-align: center;
-        }
-
-        @media (max-width: 520px) {
-            .scoreboard { padding: 10px 14px; }
-            .score-divider { padding: 0 8px; }
-            .score-value { font-size: 26px; }
-        }
+        .score-value.score-changing { animation: scoreNumberChange 260ms cubic-bezier(.2,.8,.2,1); }
+        @keyframes scoreNumberChange { 0% { opacity: 0; transform: translateY(-7px) scale(.82); } 45% { opacity: 1; transform: translateY(0) scale(1.08); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        .score-divider { color: #4B5563; font-size: 22px; padding: 0 18px; }
+        .score-status { grid-column: 1 / -1; min-height: 18px; margin-top: 8px; text-align: center; font-size: 11px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; color: #9CA3AF; }
+        .game-wrapper { position: relative; width: min(800px, 95vw, calc((100vh - 150px) * 4 / 3)); overflow: hidden; border-radius: 8px; }
+        canvas { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; border: 2px solid #00A8FF; border-radius: 8px; background: #05070D; touch-action: none; box-shadow: 0 0 24px rgba(0,168,255,.12); }
+        .score-flash { position: absolute; inset: 0; border-radius: 8px; pointer-events: none; opacity: 0; z-index: 5; overflow: hidden; }
+        .score-flash::before { content: ""; position: absolute; width: 200%; height: 200%; left: 50%; top: 50%; transform: translate(-50%,-50%) scale(0); border-radius: 50%; opacity: 0; }
+        .score-flash.ai::before { background: #FF4D6D; animation: scoreFlashCircle 1000ms cubic-bezier(.22,.61,.36,1) forwards; }
+        .score-flash.player::before { background: #00A8FF; animation: scoreFlashCircle 1000ms cubic-bezier(.22,.61,.36,1) forwards; }
+        @keyframes scoreFlashCircle { 0% { transform: translate(-50%,-50%) scale(0); opacity: 0; } 12% { opacity: .18; } 35% { opacity: .72; } 58% { transform: translate(-50%,-50%) scale(1); opacity: .62; } 78% { opacity: .28; } 100% { transform: translate(-50%,-50%) scale(1.08); opacity: 0; } }
+        .controls-hint { margin: 10px 0 0; color: #6B7280; font-size: 12px; text-align: center; }
+        @media (max-width: 520px) { .scoreboard { padding: 11px 14px; } .score-divider { padding: 0 8px; } .score-value { font-size: 29px; } .score-label { font-size: 13px; } }
     </style>
 </head>
-
 <body>
-
     <h1 class="game-title">PongMind</h1>
     <p class="game-subtitle">AI-powered Pong • Day 3 Prototype</p>
-
     <div class="scoreboard">
-        <div class="score-side">
-            <span class="score-label">You</span>
-            <span class="score-value score-player" id="playerScore">0</span>
-        </div>
-
+        <div class="score-side"><span class="score-label">YOU</span><span class="score-value score-player" id="playerScore">0</span></div>
         <span class="score-divider">:</span>
-
-        <div class="score-side">
-            <span class="score-value score-ai" id="opponentScore">0</span>
-            <span class="score-label">AI</span>
-        </div>
-
-        <div class="score-status" id="scoreStatus"></div>
+        <div class="score-side"><span class="score-value score-ai" id="opponentScore">0</span><span class="score-label">AI</span></div>
+        <div class="score-status" id="scoreStatus">READY</div>
     </div>
-
     <div class="game-wrapper">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div class="score-flash" id="scoreFlash"></div>
-        <div class="game-announcement" id="gameAnnouncement"></div>
     </div>
-
     <p class="controls-hint">Desktop: A / D or ← / → • Mobile: slide your finger across the game</p>
-
     <script src="game.js"></script>
 </body>
 </html>
