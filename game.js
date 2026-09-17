@@ -16,16 +16,17 @@ const opponent = {
     y: 20,
     width: 100,
     height: 10,
-    speed: 5
+    speed: 8,
+    reaction: 0.14
 };
 
 // Ball
 const ball = {
     x: canvas.width / 2,
     y: canvas.height / 2,
-    size: 12,
-    velocityX: 5,
-    velocityY: -3
+    size: 14,
+    velocityX: 6,
+    velocityY: -3.6
 };
 
 // Keyboard controls
@@ -145,21 +146,28 @@ function updatePlayer() {
     }
 }
 
-// Move the opponent toward where the ball is heading
+// Move the opponent smoothly toward the ball
 function updateOpponent() {
 
     // Only track the ball while it is moving toward the opponent.
-    // This prevents the AI from constantly sweeping after the ball passes it.
     if (ball.velocityY < 0) {
         const opponentCenter = opponent.x + opponent.width / 2;
+        const targetX = ball.x - opponent.width / 2;
+        const difference = targetX - opponent.x;
 
-        if (ball.x < opponentCenter) {
-            opponent.x -= opponent.speed;
+        // Smooth movement: react gradually instead of jumping by a fixed amount.
+        let movement = difference * opponent.reaction;
+
+        // Limit maximum movement per frame.
+        if (movement > opponent.speed) {
+            movement = opponent.speed;
         }
 
-        if (ball.x > opponentCenter) {
-            opponent.x += opponent.speed;
+        if (movement < -opponent.speed) {
+            movement = -opponent.speed;
         }
+
+        opponent.x += movement;
     }
 
     // Keep opponent paddle inside the canvas
@@ -209,7 +217,7 @@ function updateBall() {
             (player.width / 2);
 
         // Change the horizontal direction based on the hit position.
-        ball.velocityX = hitPosition * 6;
+        ball.velocityX = hitPosition * 6.5;
 
         // Keep a small horizontal component on a center hit.
         if (Math.abs(ball.velocityX) < 1.5) {
@@ -242,7 +250,7 @@ function updateBall() {
             (opponent.width / 2);
 
         // Change horizontal direction based on the hit position.
-        ball.velocityX = hitPosition * 6;
+        ball.velocityX = hitPosition * 6.5;
 
         // Keep a small horizontal component on a center hit.
         if (Math.abs(ball.velocityX) < 1.5) {
@@ -282,17 +290,19 @@ function drawOpponent() {
     );
 }
 
-// Draw the ball
+// Draw the ball as a circle
 function drawBall() {
 
     ctx.fillStyle = "white";
-
-    ctx.fillRect(
-        ball.x - ball.size / 2,
-        ball.y - ball.size / 2,
-        ball.size,
-        ball.size
+    ctx.beginPath();
+    ctx.arc(
+        ball.x,
+        ball.y,
+        ball.size / 2,
+        0,
+        Math.PI * 2
     );
+    ctx.fill();
 }
 
 // Game loop
