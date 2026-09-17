@@ -12,9 +12,9 @@ The AI will progressively become more advanced throughout development, eventuall
 
 ## 🚧 Current Status
 
-**Day 2 — Player Controls & UI**
+**Day 3 — Core Gameplay & Rule-Based AI**
 
-The player paddle and core input system are now implemented. Desktop players can use A/D or the arrow keys, while mouse users can move the paddle by moving across the game. On Android/mobile, the paddle follows the user's finger across the game area. The prototype control buttons have been removed and the game UI has been polished.
+The core Pong gameplay loop is now functional. The game has a player paddle, AI opponent paddle, circular ball, wall and paddle collision, smooth rule-based AI movement, score tracking, randomized ball launches, and a first-to-5 win condition.
 
 ### Development Progress
 
@@ -26,23 +26,30 @@ The player paddle and core input system are now implemented. Desktop players can
 - [x] Add mobile touch controls
 - [x] Keep paddle inside canvas boundaries
 - [x] Increase paddle movement speed
-- [x] Add mouse-follow control
-- [x] Add finger-follow mobile control
+- [x] Add mouse drag control
 - [x] Remove on-screen control buttons
 - [x] Polish initial game UI
-- [ ] Add opponent paddle
-- [ ] Add ball
-- [ ] Implement ball physics
-- [ ] Implement collision detection
-- [ ] Add scoring system
-- [ ] Add AI opponent
+- [x] Add opponent paddle
+- [x] Add ball
+- [x] Implement ball movement
+- [x] Implement left/right wall bounce
+- [x] Implement player paddle collision
+- [x] Implement opponent paddle collision
+- [x] Make ball circular
+- [x] Add hit-position-based ball direction
+- [x] Add smooth rule-based AI opponent
+- [x] Increase ball speed
+- [x] Add score tracking
+- [x] Add point reset and randomized launches
+- [x] Add first-to-5 win condition
 - [ ] Add difficulty levels
-- [ ] Add dynamic ball speed
+- [ ] Add dynamic difficulty-based ball speed
 - [ ] Add power-up system
 - [ ] Create reinforcement learning environment
 - [ ] Train reinforcement learning agent
 - [ ] Integrate trained AI
-- [ ] Deploy game
+- [ ] Add player statistics
+- [ ] Deploy final version
 
 ## 🎮 Planned Features
 
@@ -74,11 +81,11 @@ Planned power-ups include:
 - Magnet ball
 - Other positive and negative effects
 
-### Artificial Intelligence
+## 🤖 Current AI
 
-The project will eventually experiment with reinforcement learning.
+Day 3 uses a simple rule-based opponent. The AI tracks the ball while it is traveling toward the opponent and moves smoothly toward the ball's horizontal position.
 
-The AI will observe the game state, choose an action, receive a reward, and learn to improve its gameplay.
+This is intentionally not reinforcement learning yet. The rule-based AI provides a working baseline that can later be compared against a trained RL agent.
 
 ## 🧠 Reinforcement Learning Concept
 
