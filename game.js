@@ -145,6 +145,27 @@ function updatePlayer() {
     }
 }
 
+// Move the opponent toward the ball
+function updateOpponent() {
+
+    if (ball.x < opponent.x) {
+        opponent.x -= opponent.speed;
+    }
+
+    if (ball.x > opponent.x + opponent.width) {
+        opponent.x += opponent.speed;
+    }
+
+    // Keep opponent paddle inside the canvas
+    if (opponent.x < 0) {
+        opponent.x = 0;
+    }
+
+    if (opponent.x + opponent.width > canvas.width) {
+        opponent.x = canvas.width - opponent.width;
+    }
+}
+
 // Update the ball position and handle collisions
 function updateBall() {
     ball.x += ball.velocityX;
@@ -247,6 +268,7 @@ function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     updatePlayer();
+    updateOpponent();
     updateBall();
 
     drawPlayer();
