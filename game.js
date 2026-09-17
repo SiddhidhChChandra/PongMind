@@ -10,6 +10,15 @@ const player = {
     speed: 14
 };
 
+// Opponent paddle
+const opponent = {
+    x: canvas.width / 2 - (100 / 2),
+    y: 20,
+    width: 100,
+    height: 10,
+    speed: 5
+};
+
 // Keyboard controls
 let leftPressed = false;
 let rightPressed = false;
@@ -140,6 +149,19 @@ function drawPlayer() {
     );
 }
 
+// Draw the opponent paddle
+function drawOpponent() {
+
+    ctx.fillStyle = "#FF4D6D";
+
+    ctx.fillRect(
+        opponent.x,
+        opponent.y,
+        opponent.width,
+        opponent.height
+    );
+}
+
 // Game loop
 function gameLoop() {
 
@@ -147,6 +169,7 @@ function gameLoop() {
 
     updatePlayer();
     drawPlayer();
+    drawOpponent();
 
     requestAnimationFrame(gameLoop);
 }
