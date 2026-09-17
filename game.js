@@ -145,7 +145,7 @@ function updatePlayer() {
     }
 }
 
-// Update the ball position and bounce it off the side walls
+// Update the ball position and handle collisions
 function updateBall() {
     ball.x += ball.velocityX;
     ball.y += ball.velocityY;
@@ -153,6 +153,32 @@ function updateBall() {
     // Bounce off the left and right walls
     if (ball.x - ball.size / 2 <= 0 || ball.x + ball.size / 2 >= canvas.width) {
         ball.velocityX = -ball.velocityX;
+    }
+
+    // Ball edges
+    const ballLeft = ball.x - ball.size / 2;
+    const ballRight = ball.x + ball.size / 2;
+    const ballTop = ball.y - ball.size / 2;
+    const ballBottom = ball.y + ball.size / 2;
+
+    // Player paddle edges
+    const playerLeft = player.x;
+    const playerRight = player.x + player.width;
+    const playerTop = player.y;
+    const playerBottom = player.y + player.height;
+
+    // Player paddle collision
+    if (
+        ballBottom >= playerTop &&
+        ballTop <= playerBottom &&
+        ballRight >= playerLeft &&
+        ballLeft <= playerRight &&
+        ball.velocityY > 0
+    ) {
+        ball.velocityY = -ball.velocityY;
+
+        // Move the ball just above the paddle to prevent repeated collision
+        ball.y = playerTop - ball.size / 2;
     }
 }
 
