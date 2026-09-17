@@ -12,7 +12,7 @@ const player = {
 
 // Opponent paddle
 const opponent = {
-    x: canvas.width / 2 - (100 / 2),
+    x: canvas.width / 2 - 50,
     y: 20,
     width: 100,
     height: 10,
@@ -25,19 +25,21 @@ const ball = {
     x: canvas.width / 2,
     y: canvas.height / 2,
     size: 14,
-    velocityX: 6,
-    velocityY: -3.6
+    velocityX: 0,
+    velocityY: 0
 };
+
+// Score and game state
+let playerScore = 0;
+let opponentScore = 0;
+const winningScore = 5;
+let gameOver = false;
 
 // Keyboard controls
 let leftPressed = false;
 let rightPressed = false;
 
-// Detect keyboard key press
-// A / Left Arrow = move left
-// D / Right Arrow = move right
 document.addEventListener("keydown", function(event) {
-
     if (event.key === "a" || event.key === "A" || event.key === "ArrowLeft") {
         leftPressed = true;
     }
@@ -45,11 +47,14 @@ document.addEventListener("keydown", function(event) {
     if (event.key === "d" || event.key === "D" || event.key === "ArrowRight") {
         rightPressed = true;
     }
+
+    // Restart after a game over
+    if (event.key === " " && gameOver) {
+        restartGame();
+    }
 });
 
-// Detect keyboard key release
 document.addEventListener("keyup", function(event) {
-
     if (event.key === "a" || event.key === "A" || event.key === "ArrowLeft") {
         leftPressed = false;
     }
@@ -65,10 +70,8 @@ function movePaddleToPointer(clientX) {
     const scaleX = canvas.width / rect.width;
     const pointerX = (clientX - rect.left) * scaleX;
 
-    // Center the paddle on the pointer
     player.x = pointerX - player.width / 2;
 
-    // Keep paddle inside the canvas
     if (player.x < 0) {
         player.x = 0;
     }
@@ -78,7 +81,7 @@ function movePaddleToPointer(clientX) {
     }
 }
 
-// Mouse control: paddle follows ONLY while left mouse button is held and dragged
+// Mouse control: left-click and drag
 let mouseDragging = false;
 
 canvas.addEventListener("pointerdown", function(event) {
@@ -96,12 +99,10 @@ canvas.addEventListener("pointerdown", function(event) {
 });
 
 canvas.addEventListener("pointermove", function(event) {
-    // Mouse moves the paddle only during left-click drag
     if (event.pointerType === "mouse" && mouseDragging) {
         movePaddleToPointer(event.clientX);
     }
 
-    // Touch follows the finger
     if (event.pointerType === "touch") {
         event.preventDefault();
         movePaddleToPointer(event.clientX);
@@ -120,14 +121,12 @@ canvas.addEventListener("pointercancel", function(event) {
     }
 });
 
-// Stop mouse dragging if the pointer leaves the browser window
 window.addEventListener("blur", function() {
     mouseDragging = false;
 });
 
 // Move the player with keyboard controls
 function updatePlayer() {
-
     if (leftPressed) {
         player.x -= player.speed;
     }
@@ -136,7 +135,6 @@ function updatePlayer() {
         player.x += player.speed;
     }
 
-    // Keep paddle inside the canvas
     if (player.x < 0) {
         player.x = 0;
     }
@@ -148,17 +146,12 @@ function updatePlayer() {
 
 // Move the opponent smoothly toward the ball
 function updateOpponent() {
-
-    // Only track the ball while it is moving toward the opponent.
     if (ball.velocityY < 0) {
-        const opponentCenter = opponent.x + opponent.width / 2;
         const targetX = ball.x - opponent.width / 2;
         const difference = targetX - opponent.x;
 
-        // Smooth movement: react gradually instead of jumping by a fixed amount.
         let movement = difference * opponent.reaction;
 
-        // Limit maximum movement per frame.
         if (movement > opponent.speed) {
             movement = opponent.speed;
         }
@@ -170,7 +163,6 @@ function updateOpponent() {
         opponent.x += movement;
     }
 
-    // Keep opponent paddle inside the canvas
     if (opponent.x < 0) {
         opponent.x = 0;
     }
@@ -180,8 +172,58 @@ function updateOpponent() {
     }
 }
 
+// Launch the ball with a controlled random angle
+function launchBall(direction) {
+    const speed = 7.5;
+    const angle = Math.random() * 0.8 - 0.4;
+
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+    ball.velocityX = Math.sin(angle) * speed;
+    ball.velocityY = direction * Math.cos(angle) * speed;
+}
+
+// Reset the ball after a point
+function resetBall(direction) {
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height / 2;
+
+    player.x = canvas.width / 2 - player.width / 2;
+    opponent.x = canvas.width / 2 - opponent.width / 2;
+
+    launchBall(direction);
+}
+
+// Register a point and check for a winner
+function scorePoint(playerWon) {
+    if (playerWon) {
+        playerScore++;
+    } else {
+        opponentScore++;
+    }
+
+    if (playerScore >= winningScore || opponentScore >= winningScore) {
+        gameOver = true;
+        ball.velocityX = 0;
+        ball.velocityY = 0;
+        return;
+    }
+
+    // If the player scored, launch toward the player.
+    // If the opponent scored, launch toward the opponent.
+    if (playerWon) {
+        resetBall(1);
+    } else {
+        resetBall(-1);
+    }
+}
+
 // Update the ball position and handle collisions
 function updateBall() {
+    if (gameOver) {
+        return;
+    }
+
     ball.x += ball.velocityX;
     ball.y += ball.velocityY;
 
@@ -210,23 +252,17 @@ function updateBall() {
         ballLeft <= playerRight &&
         ball.velocityY > 0
     ) {
-        // Find where the ball hit the paddle.
-        // -1 = far left, 0 = center, +1 = far right
         const hitPosition =
             (ball.x - (player.x + player.width / 2)) /
             (player.width / 2);
 
-        // Change the horizontal direction based on the hit position.
         ball.velocityX = hitPosition * 6.5;
 
-        // Keep a small horizontal component on a center hit.
         if (Math.abs(ball.velocityX) < 1.5) {
             ball.velocityX = ball.velocityX >= 0 ? 1.5 : -1.5;
         }
 
         ball.velocityY = -Math.abs(ball.velocityY);
-
-        // Move the ball just above the paddle to prevent repeated collision
         ball.y = playerTop - ball.size / 2;
     }
 
@@ -244,31 +280,42 @@ function updateBall() {
         ballLeft <= opponentRight &&
         ball.velocityY < 0
     ) {
-        // Find where the ball hit the opponent paddle.
         const hitPosition =
             (ball.x - (opponent.x + opponent.width / 2)) /
             (opponent.width / 2);
 
-        // Change horizontal direction based on the hit position.
         ball.velocityX = hitPosition * 6.5;
 
-        // Keep a small horizontal component on a center hit.
         if (Math.abs(ball.velocityX) < 1.5) {
             ball.velocityX = ball.velocityX >= 0 ? 1.5 : -1.5;
         }
 
         ball.velocityY = Math.abs(ball.velocityY);
-
-        // Move the ball just below the paddle to prevent repeated collision
         ball.y = opponentBottom + ball.size / 2;
     }
+
+    // Player loses if the ball passes the bottom edge
+    if (ballTop > canvas.height) {
+        scorePoint(false);
+    }
+
+    // Opponent loses if the ball passes the top edge
+    if (ballBottom < 0) {
+        scorePoint(true);
+    }
+}
+
+// Restart the complete match
+function restartGame() {
+    playerScore = 0;
+    opponentScore = 0;
+    gameOver = false;
+    resetBall(-1);
 }
 
 // Draw the player paddle
 function drawPlayer() {
-
     ctx.fillStyle = "#00A8FF";
-
     ctx.fillRect(
         player.x,
         player.y,
@@ -279,9 +326,7 @@ function drawPlayer() {
 
 // Draw the opponent paddle
 function drawOpponent() {
-
     ctx.fillStyle = "#FF4D6D";
-
     ctx.fillRect(
         opponent.x,
         opponent.y,
@@ -292,7 +337,6 @@ function drawOpponent() {
 
 // Draw the ball as a circle
 function drawBall() {
-
     ctx.fillStyle = "white";
     ctx.beginPath();
     ctx.arc(
@@ -305,9 +349,36 @@ function drawBall() {
     ctx.fill();
 }
 
+// Draw the score
+function drawScore() {
+    ctx.fillStyle = "white";
+    ctx.font = "bold 28px Arial";
+    ctx.textAlign = "center";
+
+    ctx.fillText(`AI  ${opponentScore}`, canvas.width / 2 - 90, 65);
+    ctx.fillText(`YOU  ${playerScore}`, canvas.width / 2 + 90, 65);
+}
+
+// Draw game-over message
+function drawGameOver() {
+    if (!gameOver) {
+        return;
+    }
+
+    const playerWon = playerScore >= winningScore;
+    const message = playerWon ? "YOU WIN!" : "AI WINS!";
+
+    ctx.fillStyle = "white";
+    ctx.font = "bold 42px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(message, canvas.width / 2, canvas.height / 2 - 15);
+
+    ctx.font = "18px Arial";
+    ctx.fillText("Press SPACE to restart", canvas.width / 2, canvas.height / 2 + 25);
+}
+
 // Game loop
 function gameLoop() {
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     updatePlayer();
@@ -317,8 +388,12 @@ function gameLoop() {
     drawPlayer();
     drawOpponent();
     drawBall();
+    drawScore();
+    drawGameOver();
 
     requestAnimationFrame(gameLoop);
 }
 
+// Start the first rally
+launchBall(-1);
 gameLoop();
