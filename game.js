@@ -180,6 +180,26 @@ function updateBall() {
         // Move the ball just above the paddle to prevent repeated collision
         ball.y = playerTop - ball.size / 2;
     }
+
+    // Opponent paddle edges
+    const opponentLeft = opponent.x;
+    const opponentRight = opponent.x + opponent.width;
+    const opponentTop = opponent.y;
+    const opponentBottom = opponent.y + opponent.height;
+
+    // Opponent paddle collision
+    if (
+        ballTop <= opponentBottom &&
+        ballBottom >= opponentTop &&
+        ballRight >= opponentLeft &&
+        ballLeft <= opponentRight &&
+        ball.velocityY < 0
+    ) {
+        ball.velocityY = -ball.velocityY;
+
+        // Move the ball just below the paddle to prevent repeated collision
+        ball.y = opponentBottom + ball.size / 2;
+    }
 }
 
 // Draw the player paddle
