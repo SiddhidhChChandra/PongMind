@@ -27,6 +27,14 @@ const confirmModal = document.getElementById("confirmModal");
 const confirmYes = document.getElementById("confirmYes");
 const confirmNo = document.getElementById("confirmNo");
 const gameSubtitleElement = document.getElementById("gameSubtitle");
+const endScreen = document.getElementById("endScreen");
+const endTitle = document.getElementById("endTitle");
+const endStamp = document.getElementById("endStamp");
+const endScore = document.getElementById("endScore");
+const endMessage = document.getElementById("endMessage");
+const endRestartButton = document.getElementById("endRestartButton");
+const endMenuButton = document.getElementById("endMenuButton");
+const endDifficultyButton = document.getElementById("endDifficultyButton");
 
 const playerScoreElement = document.getElementById("playerScore");
 const opponentScoreElement = document.getElementById("opponentScore");
@@ -342,6 +350,7 @@ function launchBall() {
 }
 
 function beginMatch(introText) {
+    hideEndScreen();
     gameStarted = true;
     gameOver = false;
     isPaused = false;
@@ -497,8 +506,10 @@ function finishEndlessMode() {
     if (opponentScore > playerScore) scoreFlashElement.classList.add("ai");
 
     showAnnouncement(winnerText, winnerColor, "show-ready");
-    scoreStatusElement.textContent =
-        "10 MINUTES COMPLETE • FINAL SCORE " + playerScore + " : " + opponentScore;
+    scoreStatusElement.textContent = "";
+    setTimeout(() => {
+        if (gameOver) showEndScreen(playerScore > opponentScore);
+    }, 700);
 }
 
 function scorePoint(playerWon) {
@@ -529,7 +540,10 @@ function scorePoint(playerWon) {
         scoreFlashElement.classList.add(playerWon ? "player" : "ai");
 
         showAnnouncement(winnerText, winnerColor, "show-ready");
-        scoreStatusElement.textContent = "PRESS SPACE TO PLAY AGAIN";
+        scoreStatusElement.textContent = "";
+        setTimeout(() => {
+            if (gameOver) showEndScreen(playerWon);
+        }, 700);
         return;
     }
 
@@ -693,6 +707,22 @@ function drawBall() {
     ctx.restore();
 }
 
+function showEndScreen(playerWon) {
+    endScreen.classList.add("open");
+    endTitle.textContent = playerWon ? "YOU WIN" : "YOU LOSE";
+    endTitle.classList.toggle("win", playerWon);
+    endTitle.classList.toggle("loss", !playerWon);
+    endStamp.textContent = playerWon ? "MATCH COMPLETE" : "MATCH TERMINATED";
+    endScore.textContent = playerScore + " : " + opponentScore;
+    endMessage.textContent = playerWon
+        ? "YOU BEAT THE MACHINE. RUN IT BACK."
+        : "THE MACHINE GOT THE LAST WORD.";
+}
+
+function hideEndScreen() {
+    endScreen.classList.remove("open");
+}
+
 function restartGame() {
     if (isEndlessMode) {
         startEndlessMode();
@@ -743,6 +773,27 @@ document.addEventListener("keydown", function(event) {
         event.preventDefault();
         togglePause();
     }
+});
+
+endRestartButton.addEventListener("click", function() {
+    hideEndScreen();
+    restartGame();
+});
+
+endMenuButton.addEventListener("click", function() {
+    hideEndScreen();
+    exitMatch();
+});
+
+endDifficultyButton.addEventListener("click", function() {
+    hideEndScreen();
+    isPaused = false;
+    gameStarted = false;
+    gameOver = false;
+    transitionActive = false;
+    ball.visible = false;
+    showScreen(difficultyScreen);
+    openDifficultyPage();
 });
 
 function gameLoop() {
