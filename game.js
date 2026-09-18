@@ -3,11 +3,29 @@ const ctx = canvas.getContext("2d");
 
 const homeScreen = document.getElementById("homeScreen");
 const menuScreen = document.getElementById("menuScreen");
+const difficultyScreen = document.getElementById("difficultyScreen");
 const gameScreen = document.getElementById("gameScreen");
 const startGameButton = document.getElementById("startGameButton");
+const difficultyButton = document.getElementById("difficultyButton");
 const endlessButton = document.getElementById("endlessButton");
 const matchPointsElement = document.getElementById("matchPoints");
-const difficultyButtons = document.querySelectorAll(".difficulty-btn");
+const difficultyChoices = document.querySelectorAll(".difficulty-choice");
+const savedDifficultyElement = document.getElementById("savedDifficulty");
+const difficultyDescription = document.getElementById("difficultyDescription");
+const saveModal = document.getElementById("saveModal");
+const saveTitle = document.getElementById("saveTitle");
+const playNowButton = document.getElementById("playNowButton");
+const saveLaterButton = document.getElementById("saveLaterButton");
+const backHomeButton = document.getElementById("backHomeButton");
+const backMenuButton = document.getElementById("backMenuButton");
+const pauseButton = document.getElementById("pauseButton");
+const pauseOverlay = document.getElementById("pauseOverlay");
+const resumeButton = document.getElementById("resumeButton");
+const restartButton = document.getElementById("restartButton");
+const exitButton = document.getElementById("exitButton");
+const confirmModal = document.getElementById("confirmModal");
+const confirmYes = document.getElementById("confirmYes");
+const confirmNo = document.getElementById("confirmNo");
 const gameSubtitleElement = document.getElementById("gameSubtitle");
 
 const playerScoreElement = document.getElementById("playerScore");
@@ -40,7 +58,7 @@ const difficultySettings = {
     extreme: { speed: 15, reaction: 0.24, maximumError: 25 }
 };
 
-let currentDifficulty = "normal";
+let currentDifficulty = localStorage.getItem("pongmindDifficulty") || "normal";
 const ball = {
     x: canvas.width / 2,
     y: canvas.height / 2,
@@ -81,24 +99,84 @@ const goDuration = 1000;
 let leftPressed = false;
 let rightPressed = false;
 let mouseDragging = false;
+let isPaused = false;
+let pendingDifficulty = currentDifficulty;
 
 function showScreen(screenToShow) {
-    [homeScreen, menuScreen, gameScreen].forEach(screen => {
+    [homeScreen, menuScreen, difficultyScreen, gameScreen].forEach(screen => {
         screen.classList.toggle("hidden", screen !== screenToShow);
     });
+}
+
+function updateSavedDifficultyUI() {
+    savedDifficultyElement.textContent = "DIFFICULTY: " + currentDifficulty.toUpperCase();
+}
+
+const difficultyDescriptions = {
+    easy: "A gentle fight. Learn the rhythm and keep the ball alive.",
+    normal: "A steady fight. Good place to learn the rhythm.",
+    hard: "Quick reactions. The machine leaves less room for mistakes.",
+    extreme: "No mercy. Fast reactions and sharp returns."
+};
+
+function openDifficultyPage() {
+    pendingDifficulty = currentDifficulty;
+    difficultyChoices.forEach(button => {
+        button.classList.toggle("selected", button.dataset.difficulty === pendingDifficulty);
+    });
+    difficultyDescription.textContent = difficultyDescriptions[pendingDifficulty];
+    showScreen(difficultyScreen);
+}
+
+function openDifficultyModal(difficulty) {
+    pendingDifficulty = difficulty;
+    saveTitle.textContent = difficulty.toUpperCase() + " SELECTED";
+    saveModal.classList.add("open");
+}
+
+function applyDifficulty(difficulty) {
+    setDifficulty(difficulty);
+    localStorage.setItem("pongmindDifficulty", difficulty);
+    updateSavedDifficultyUI();
 }
 
 homeScreen.addEventListener("click", function() {
     showScreen(menuScreen);
 });
 
-difficultyButtons.forEach(button => {
+difficultyButton.addEventListener("click", function(event) {
+    event.stopPropagation();
+    openDifficultyPage();
+});
+
+difficultyChoices.forEach(button => {
     button.addEventListener("click", function(event) {
         event.stopPropagation();
-        difficultyButtons.forEach(item => item.classList.remove("selected"));
+        difficultyChoices.forEach(item => item.classList.remove("selected"));
         button.classList.add("selected");
-        setDifficulty(button.dataset.difficulty);
+        difficultyDescription.textContent = difficultyDescriptions[button.dataset.difficulty];
+        openDifficultyModal(button.dataset.difficulty);
     });
+});
+
+playNowButton.addEventListener("click", function() {
+    applyDifficulty(pendingDifficulty);
+    saveModal.classList.remove("open");
+    startConfiguredGame();
+});
+
+saveLaterButton.addEventListener("click", function() {
+    applyDifficulty(pendingDifficulty);
+    saveModal.classList.remove("open");
+    showScreen(menuScreen);
+});
+
+backHomeButton.addEventListener("click", function() {
+    showScreen(homeScreen);
+});
+
+backMenuButton.addEventListener("click", function() {
+    showScreen(menuScreen);
 });
 
 startGameButton.addEventListener("click", function(event) {
@@ -145,7 +223,7 @@ function movePaddleToPointer(clientX) {
 }
 
 canvas.addEventListener("pointerdown", function(event) {
-    if (!gameStarted || gameOver) return;
+    if (!gameStarted || gameOver || isPaused) return;
 
     if (event.pointerType === "mouse" && event.button === 0) {
         mouseDragging = true;
@@ -187,7 +265,7 @@ window.addEventListener("blur", function() {
 });
 
 function updatePlayer() {
-    if (!gameStarted || transitionActive || gameOver) return;
+    if (!gameStarted || transitionActive || gameOver || isPaused) return;
 
     if (leftPressed) player.x -= player.speed;
     if (rightPressed) player.x += player.speed;
@@ -209,7 +287,7 @@ function updateAIUnpredictability() {
 }
 
 function updateOpponent() {
-    if (!gameStarted || transitionActive || gameOver) return;
+    if (!gameStarted || transitionActive || gameOver || isPaused) return;
 
     if (ball.velocityY < 0) {
         updateAIUnpredictability();
@@ -266,6 +344,8 @@ function launchBall() {
 function beginMatch(introText) {
     gameStarted = true;
     gameOver = false;
+    isPaused = false;
+    pauseOverlay.classList.remove("open");
     transitionActive = true;
     transitionPhase = "start-intro";
     transitionStartTime = performance.now();
@@ -483,7 +563,7 @@ function updateEndlessTimer() {
 }
 
 function updateBall() {
-    if (!gameStarted || gameOver || transitionActive || !ball.visible) return;
+    if (!gameStarted || gameOver || transitionActive || !ball.visible || isPaused) return;
 
     rallyTime = (performance.now() - rallyStartTime) / 1000;
 
@@ -618,10 +698,52 @@ function restartGame() {
         startEndlessMode();
         return;
     }
-
     winningScore = Number(matchPointsElement.value);
     startConfiguredGame();
 }
+
+function togglePause() {
+    if (!gameStarted || gameOver) return;
+    isPaused = !isPaused;
+    pauseOverlay.classList.toggle("open", isPaused);
+}
+
+function exitMatch() {
+    isPaused = false;
+    gameStarted = false;
+    gameOver = false;
+    transitionActive = false;
+    ball.visible = false;
+    pauseOverlay.classList.remove("open");
+    confirmModal.classList.remove("open");
+    showScreen(menuScreen);
+    updateSavedDifficultyUI();
+}
+
+pauseButton.addEventListener("click", togglePause);
+resumeButton.addEventListener("click", togglePause);
+restartButton.addEventListener("click", function() {
+    pauseOverlay.classList.remove("open");
+    isPaused = false;
+    restartGame();
+});
+exitButton.addEventListener("click", function() {
+    pauseOverlay.classList.remove("open");
+    confirmModal.classList.add("open");
+});
+confirmNo.addEventListener("click", function() {
+    confirmModal.classList.remove("open");
+    pauseOverlay.classList.add("open");
+    isPaused = true;
+});
+confirmYes.addEventListener("click", exitMatch);
+
+document.addEventListener("keydown", function(event) {
+    if (event.key === "Escape" && !gameScreen.classList.contains("hidden")) {
+        event.preventDefault();
+        togglePause();
+    }
+});
 
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -640,5 +762,6 @@ function gameLoop() {
 }
 
 setDifficulty(currentDifficulty);
+updateSavedDifficultyUI();
 updateScoreboard();
 gameLoop();
