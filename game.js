@@ -484,10 +484,10 @@ function finishEndlessMode() {
 
     if (playerScore > opponentScore) {
         winnerText = "YOU WIN!";
-        winnerColor = "#00A8FF";
+        winnerColor = "#FFD45C";
     } else if (opponentScore > playerScore) {
         winnerText = "AI WINS!";
-        winnerColor = "#FF4D6D";
+        winnerColor = "#FF6A35";
     }
 
     scoreFlashElement.classList.remove("ai", "player");
@@ -671,11 +671,11 @@ function drawRoundedPaddle(paddle, glowColor) {
 }
 
 function drawPlayer() {
-    drawRoundedPaddle(player, "#00A8FF");
+    drawRoundedPaddle(player, "#FFD45C");
 }
 
 function drawOpponent() {
-    drawRoundedPaddle(opponent, "#FF4D6D");
+    drawRoundedPaddle(opponent, "#FF6A35");
 }
 
 function drawBall() {
