@@ -9,6 +9,31 @@ const gameAnnouncementElement = document.getElementById("gameAnnouncement");
 
 const player = { x: canvas.width / 2 - 50, y: canvas.height - 30, width: 100, height: 10, speed: 14 };
 const opponent = { x: canvas.width / 2 - 50, y: 20, width: 100, height: 10, speed: 9, reaction: 0.13 };
+
+const difficultySettings = {
+    easy: {
+        speed: 6,
+        reaction: 0.08,
+        maximumError: 95
+    },
+    normal: {
+        speed: 9,
+        reaction: 0.13,
+        maximumError: 75
+    },
+    hard: {
+        speed: 12,
+        reaction: 0.18,
+        maximumError: 50
+    },
+    extreme: {
+        speed: 15,
+        reaction: 0.24,
+        maximumError: 25
+    }
+};
+
+let currentDifficulty = "normal";
 const ball = { x: canvas.width / 2, y: canvas.height / 2, size: 14, velocityX: 0, velocityY: 0, visible: false };
 
 const startingBallSpeed = 4.2;
@@ -99,7 +124,7 @@ function updatePlayer() {
 
 function updateAIUnpredictability() {
     const unpredictability = Math.min(rallyTime / 18, 1);
-    const maximumError = 75;
+    const maximumError = difficultySettings[currentDifficulty].maximumError;
     if (performance.now() >= nextAiErrorUpdate) {
         aiTargetError = (Math.random() * 2 - 1) * maximumError * unpredictability;
         nextAiErrorUpdate = performance.now() + 220;
@@ -112,13 +137,22 @@ function updateOpponent() {
         updateAIUnpredictability();
         const targetX = ball.x - opponent.width / 2 + aiTargetError;
         const difference = targetX - opponent.x;
-        let movement = difference * opponent.reaction;
-        if (movement > opponent.speed) movement = opponent.speed;
-        if (movement < -opponent.speed) movement = -opponent.speed;
+        const settings = difficultySettings[currentDifficulty];
+        let movement = difference * settings.reaction;
+        if (movement > settings.speed) movement = settings.speed;
+        if (movement < -settings.speed) movement = -settings.speed;
         opponent.x += movement;
     }
     if (opponent.x < 0) opponent.x = 0;
     if (opponent.x + opponent.width > canvas.width) opponent.x = canvas.width - opponent.width;
+}
+
+function setDifficulty(difficulty) {
+    if (!difficultySettings[difficulty]) return;
+    currentDifficulty = difficulty;
+    const settings = difficultySettings[difficulty];
+    opponent.speed = settings.speed;
+    opponent.reaction = settings.reaction;
 }
 
 function getCurrentBallSpeed() {
@@ -283,7 +317,8 @@ function updateBall() {
     if (ballBottom >= player.y && ballTop <= player.y + player.height && ballRight >= player.x && ballLeft <= player.x + player.width && ball.velocityY > 0) {
         const hitPosition = (ball.x - (player.x + player.width / 2)) / (player.width / 2);
         const unpredictability = Math.min(rallyTime / 18, 1);
-        const randomAngle = (Math.random() * 2 - 1) * 0.28 * unpredictability;
+        const difficultyAngleMultiplier = currentDifficulty === "extreme" ? 0.12 : 0.28;
+        const randomAngle = (Math.random() * 2 - 1) * difficultyAngleMultiplier * unpredictability;
         const finalAngle = hitPosition + randomAngle;
         ball.velocityX = Math.sin(finalAngle) * currentSpeed;
         ball.velocityY = -Math.cos(finalAngle) * currentSpeed;
@@ -293,7 +328,8 @@ function updateBall() {
     if (ballTop <= opponent.y + opponent.height && ballBottom >= opponent.y && ballRight >= opponent.x && ballLeft <= opponent.x + opponent.width && ball.velocityY < 0) {
         const hitPosition = (ball.x - (opponent.x + opponent.width / 2)) / (opponent.width / 2);
         const unpredictability = Math.min(rallyTime / 18, 1);
-        const randomAngle = (Math.random() * 2 - 1) * 0.28 * unpredictability;
+        const difficultyAngleMultiplier = currentDifficulty === "extreme" ? 0.12 : 0.28;
+        const randomAngle = (Math.random() * 2 - 1) * difficultyAngleMultiplier * unpredictability;
         const finalAngle = hitPosition + randomAngle;
         ball.velocityX = Math.sin(finalAngle) * currentSpeed;
         ball.velocityY = Math.cos(finalAngle) * currentSpeed;
@@ -360,6 +396,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+setDifficulty(currentDifficulty);
 updateScoreboard();
 scoreStatusElement.textContent = "";
 showAnnouncement("CLICK TO START", "#FFFFFF", "start-prompt");
