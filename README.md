@@ -18,9 +18,9 @@ The AI will progressively become more advanced throughout development, eventuall
 
 ## 🚧 Current Status
 
-**Day 3 — Core Gameplay & Rule-Based AI — COMPLETE ✅**
+**Day 4 — Arcade UI, Difficulty & Match Flow — COMPLETE ✅**
 
-The core Pong gameplay loop is functional. The game includes a player paddle, AI opponent paddle, circular ball, wall and paddle collision, smooth rule-based AI movement, increasing ball speed, score tracking, randomized ball launches, a first-to-5 win condition, score transitions, centered announcements, a start prompt, rounded paddles, and polished gameplay UI.
+The core Pong gameplay loop is functional and has now been wrapped in a complete arcade-style game flow. The game includes a player paddle, AI opponent paddle, circular ball, wall and paddle collision, smooth rule-based AI movement, increasing ball speed, score tracking, randomized ball launches, selectable match points, Easy/Normal/Hard/Extreme difficulty, Endless Mode, pause/resume/restart/exit controls, a retro arcade UI, animated home screen, difficulty selection and saving, READY/GO transitions, and dedicated win/loss end screens with restart, main menu, and difficulty options.
 
 ### Development Progress
 
@@ -56,7 +56,12 @@ The core Pong gameplay loop is functional. The game includes a player paddle, AI
 - [x] Add match-end winner announcement
 - [x] Add live game link
 - [x] Document Day 3 completion
-- [ ] Add difficulty levels
+- [x] Add difficulty levels
+- [x] Add Endless Mode (10-minute high-score match)
+- [x] Add pause / resume / restart / exit match flow
+- [x] Add win / loss end screens
+- [x] Add difficulty saving with localStorage
+- [x] Add retro arcade UI and animated home screen
 - [ ] Add dynamic difficulty-based ball speed
 - [ ] Add power-up system
 - [ ] Create reinforcement learning environment
@@ -79,15 +84,15 @@ The core Pong gameplay loop is functional. The game includes a player paddle, AI
 - Easy
 - Normal
 - Hard
-- Heavy / Extreme
+- Extreme
 
-Each difficulty will modify factors such as AI reaction speed, movement speed, accuracy, and ball speed.
+Difficulty can be selected from the menu and saved for later. The current rule-based AI changes its movement speed, reaction behavior, and targeting error depending on the selected difficulty.
 
 A future Extreme difficulty may also introduce controlled unpredictability: random acceleration changes, fake movements, temporary targeting errors, sudden corrections, and deceptive movement patterns that make the AI less predictable.
 
 ### Endless Mode
 
-A future **Endless Mode** will remove the fixed winning score. Instead, the match will run for a set time (planned: **10 minutes**) and the player with the highest score when time expires will win.
+**Endless Mode is now implemented.** It removes the fixed winning score and runs for **10 minutes**. The player with the highest score when time expires wins.
 
 ### Power-Ups
 Planned power-ups include:
@@ -101,6 +106,16 @@ Planned power-ups include:
 - Multi-ball
 - Magnet ball
 - Other positive and negative effects
+
+## 🎮 Current Game Flow
+
+1. Home screen → click anywhere to enter the menu
+2. Choose difficulty → play immediately or save the choice for later
+3. Start a normal match with selectable match points, or start a 10-minute Endless Run
+4. READY → GO → gameplay
+5. Pause with the on-screen control or **Escape**
+6. Pause menu supports **Resume**, **Restart Match**, and **Exit Match**
+7. At match end, a dedicated win/loss screen provides **Restart Again**, **Main Menu**, and **Change Difficulty**
 
 ## 🤖 Current AI
 
