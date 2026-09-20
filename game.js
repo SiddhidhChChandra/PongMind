@@ -32,6 +32,7 @@ const endTitle = document.getElementById("endTitle");
 const endStamp = document.getElementById("endStamp");
 const endScore = document.getElementById("endScore");
 const endMessage = document.getElementById("endMessage");
+const endStats = document.getElementById("endStats");
 const endRestartButton = document.getElementById("endRestartButton");
 const endMenuButton = document.getElementById("endMenuButton");
 const endDifficultyButton = document.getElementById("endDifficultyButton");
@@ -60,10 +61,34 @@ const opponent = {
 };
 
 const difficultySettings = {
-    easy: { speed: 6, reaction: 0.08, maximumError: 95 },
-    normal: { speed: 9, reaction: 0.13, maximumError: 75 },
-    hard: { speed: 12, reaction: 0.18, maximumError: 50 },
-    extreme: { speed: 15, reaction: 0.24, maximumError: 25 }
+    easy: {
+        speed: 5.5,
+        reaction: 0.075,
+        maximumError: 115,
+        prediction: 0,
+        fakeChance: 0
+    },
+    normal: {
+        speed: 8.5,
+        reaction: 0.115,
+        maximumError: 75,
+        prediction: 0.35,
+        fakeChance: 0.02
+    },
+    hard: {
+        speed: 12,
+        reaction: 0.18,
+        maximumError: 42,
+        prediction: 0.78,
+        fakeChance: 0.06
+    },
+    extreme: {
+        speed: 15,
+        reaction: 0.245,
+        maximumError: 22,
+        prediction: 1,
+        fakeChance: 0.12
+    }
 };
 
 let currentDifficulty = localStorage.getItem("pongmindDifficulty") || "normal";
@@ -84,6 +109,11 @@ let rallyStartTime = 0;
 let rallyTime = 0;
 let aiTargetError = 0;
 let nextAiErrorUpdate = 0;
+let aiFakeOffset = 0;
+let nextAiFakeUpdate = 0;
+
+let rallyCount = 0;
+let longestRally = 0;
 
 let playerScore = 0;
 let opponentScore = 0;
@@ -285,31 +315,88 @@ function updatePlayer() {
 }
 
 function updateAIUnpredictability() {
+    const settings = difficultySettings[currentDifficulty];
     const unpredictability = Math.min(rallyTime / 18, 1);
-    const maximumError = difficultySettings[currentDifficulty].maximumError;
+    const now = performance.now();
 
-    if (performance.now() >= nextAiErrorUpdate) {
-        aiTargetError = (Math.random() * 2 - 1) * maximumError * unpredictability;
-        nextAiErrorUpdate = performance.now() + 220;
+    if (now >= nextAiErrorUpdate) {
+        aiTargetError =
+            (Math.random() * 2 - 1) *
+            settings.maximumError *
+            Math.max(0.35, unpredictability);
+
+        nextAiErrorUpdate = now + (currentDifficulty === "extreme" ? 170 : 260);
     }
+
+    if (now >= nextAiFakeUpdate) {
+        aiFakeOffset = 0;
+
+        if (Math.random() < settings.fakeChance * Math.max(0.5, unpredictability)) {
+            aiFakeOffset =
+                (Math.random() < 0.5 ? -1 : 1) *
+                (35 + Math.random() * 70);
+        }
+
+        nextAiFakeUpdate = now + (currentDifficulty === "extreme" ? 500 : 850);
+    }
+}
+
+function predictBallXAtOpponent() {
+    if (ball.velocityY >= 0) return ball.x;
+
+    const distance = Math.max(0, ball.y - (opponent.y + opponent.height + ball.size / 2));
+    const timeToReach = distance / Math.max(0.1, Math.abs(ball.velocityY));
+    let predictedX = ball.x + ball.velocityX * timeToReach;
+
+    const minX = ball.size / 2;
+    const maxX = canvas.width - ball.size / 2;
+    const width = maxX - minX;
+
+    if (width <= 0) return ball.x;
+
+    predictedX -= minX;
+
+    const cycle = width * 2;
+    let wrapped = ((predictedX % cycle) + cycle) % cycle;
+
+    if (wrapped > width) {
+        wrapped = cycle - wrapped;
+    }
+
+    return minX + wrapped;
 }
 
 function updateOpponent() {
     if (!gameStarted || transitionActive || gameOver || isPaused) return;
 
+    const settings = difficultySettings[currentDifficulty];
+
     if (ball.velocityY < 0) {
         updateAIUnpredictability();
 
-        const settings = difficultySettings[currentDifficulty];
-        const targetX = ball.x - opponent.width / 2 + aiTargetError;
-        const difference = targetX - opponent.x;
+        const directTarget = ball.x;
+        const predictedTarget = predictBallXAtOpponent();
+        const targetBallX =
+            directTarget + (predictedTarget - directTarget) * settings.prediction;
 
+        const targetX =
+            targetBallX -
+            opponent.width / 2 +
+            aiTargetError +
+            aiFakeOffset;
+
+        const difference = targetX - opponent.x;
         let movement = difference * settings.reaction;
 
         if (movement > settings.speed) movement = settings.speed;
         if (movement < -settings.speed) movement = -settings.speed;
 
         opponent.x += movement;
+    } else if (currentDifficulty === "easy") {
+        // Easy AI relaxes toward center while the ball travels away.
+        const centerDifference =
+            canvas.width / 2 - (opponent.x + opponent.width / 2);
+        opponent.x += centerDifference * 0.015;
     }
 
     if (opponent.x < 0) opponent.x = 0;
@@ -346,7 +433,9 @@ function launchBall() {
     rallyStartTime = performance.now();
     rallyTime = 0;
     aiTargetError = 0;
+    aiFakeOffset = 0;
     nextAiErrorUpdate = performance.now() + 1000;
+    nextAiFakeUpdate = performance.now() + 1200;
 }
 
 function beginMatch(introText) {
@@ -361,6 +450,8 @@ function beginMatch(introText) {
 
     playerScore = 0;
     opponentScore = 0;
+    rallyCount = 0;
+    longestRally = 0;
 
     ball.visible = false;
     player.x = canvas.width / 2 - player.width / 2;
@@ -465,7 +556,7 @@ function updateTransition() {
 function triggerScoreSequence(playerWon) {
     const winnerClass = playerWon ? "player" : "ai";
     const winnerText = playerWon ? "PLAYER SCORED!" : "AI SCORED!";
-    const winnerColor = playerWon ? "#00A8FF" : "#FF4D6D";
+    const winnerColor = playerWon ? "#55E7FF" : "#FF2BD6";
 
     scoreFlashElement.classList.remove("ai", "player");
     void scoreFlashElement.offsetWidth;
@@ -493,10 +584,10 @@ function finishEndlessMode() {
 
     if (playerScore > opponentScore) {
         winnerText = "YOU WIN!";
-        winnerColor = "#FFD45C";
+        winnerColor = "#55E7FF";
     } else if (opponentScore > playerScore) {
         winnerText = "AI WINS!";
-        winnerColor = "#FF6A35";
+        winnerColor = "#FF2BD6";
     }
 
     scoreFlashElement.classList.remove("ai", "player");
@@ -514,6 +605,10 @@ function finishEndlessMode() {
 
 function scorePoint(playerWon) {
     if (transitionActive || gameOver) return;
+
+    const completedRally = rallyTime;
+    rallyCount++;
+    longestRally = Math.max(longestRally, completedRally);
 
     if (playerWon) playerScore++;
     else opponentScore++;
@@ -685,11 +780,11 @@ function drawRoundedPaddle(paddle, glowColor) {
 }
 
 function drawPlayer() {
-    drawRoundedPaddle(player, "#FFD45C");
+    drawRoundedPaddle(player, "#55E7FF");
 }
 
 function drawOpponent() {
-    drawRoundedPaddle(opponent, "#FF6A35");
+    drawRoundedPaddle(opponent, "#FF2BD6");
 }
 
 function drawBall() {
@@ -714,6 +809,8 @@ function showEndScreen(playerWon) {
     endTitle.classList.toggle("loss", !playerWon);
     endStamp.textContent = playerWon ? "MATCH COMPLETE" : "MATCH TERMINATED";
     endScore.textContent = playerScore + " : " + opponentScore;
+    endStats.textContent =
+        rallyCount + " / " + Math.round(longestRally) + "s";
     endMessage.textContent = playerWon
         ? "YOU BEAT THE MACHINE. RUN IT BACK."
         : "THE MACHINE GOT THE LAST WORD.";
