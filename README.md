@@ -8,7 +8,7 @@ The project starts with a basic Pong implementation and gradually evolves into a
 
 **Live game:** https://siddhidhchchandra.github.io/PongMind/
 
-Click the link to open the playable web version. The game opens with a start prompt, then displays **FIRST TO SCORE 5 WINS**, followed by **READY! → GO!** before the rally begins.
+Click the link to open the playable web version. The game opens with the arcade start screen, then lets you choose difficulty and match type before the **READY! → GO!** sequence begins.
 
 ## 🎯 Project Goal
 
@@ -66,13 +66,29 @@ The core Pong gameplay loop is functional and has now been extended with a stron
 - [x] Make difficulty levels meaningfully different
 - [x] Add controlled AI unpredictability on higher difficulties
 - [x] Add match statistics (rally count and longest rally)
-- [ ] Add dynamic difficulty-based ball speed
+- [x] Add dynamic ball speed during rallies
+- [ ] Add difficulty-specific ball speed
 - [ ] Add power-up system
 - [ ] Create reinforcement learning environment
 - [ ] Train reinforcement learning agent
 - [ ] Integrate trained AI
-- [ ] Add player statistics
+- [x] Add basic match statistics
+- [ ] Add player statistics and persistent history
 - [ ] Deploy final version
+
+## 🎮 Implemented Features
+
+- Selectable match length: 3, 5, 7, 10, or 15 points
+- Easy, Normal, Hard, and Extreme difficulty
+- Saved difficulty preference using localStorage
+- 10-minute Endless Mode
+- Predictive rule-based AI with wall-bounce prediction
+- Controlled AI unpredictability on higher difficulties
+- Pause, resume, restart, and exit match controls
+- Keyboard, mouse-drag, and touch controls
+- Retro arcade interface with animated home screen
+- Dedicated win/loss end screens
+- Rally count and longest-rally tracking
 
 ## 🎮 Planned Features
 
@@ -92,7 +108,7 @@ The core Pong gameplay loop is functional and has now been extended with a stron
 
 Difficulty can be selected from the menu and saved for later. The current rule-based AI changes its movement speed, reaction behavior, and targeting error depending on the selected difficulty.
 
-A future Extreme difficulty may also introduce controlled unpredictability: random acceleration changes, fake movements, temporary targeting errors, sudden corrections, and deceptive movement patterns that make the AI less predictable.
+Extreme currently includes controlled targeting errors and occasional fake movement. More advanced deceptive behavior can be explored later.
 
 ### Endless Mode
 
@@ -123,7 +139,7 @@ Planned power-ups include:
 
 ## 🤖 Current AI
 
-Day 3 uses a simple rule-based opponent. The AI now uses progressively stronger rule-based behavior. Easy primarily follows the ball directly, Normal uses partial prediction, Hard uses stronger prediction, and Extreme combines prediction with controlled targeting errors and occasional fake movement. The AI predicts where the ball will reach the opponent's side while accounting for horizontal wall bounces.
+The current AI is a rule-based baseline built incrementally across the project. The AI now uses progressively stronger rule-based behavior. Easy primarily follows the ball directly, Normal uses partial prediction, Hard uses stronger prediction, and Extreme combines prediction with controlled targeting errors and occasional fake movement. The AI predicts where the ball will reach the opponent's side while accounting for horizontal wall bounces.
 
 Match statistics currently track completed rallies and the longest rally, providing a baseline for future comparisons between rule-based and reinforcement-learning agents.
 
@@ -194,5 +210,4 @@ Possible future additions include:
 - Player statistics
 - Leaderboards
 - Improved mobile controls
-- Advanced AI difficulty and deceptive movement
-- Endless Mode
+- More advanced AI difficulty and deceptive movement
