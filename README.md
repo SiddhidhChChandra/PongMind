@@ -18,9 +18,9 @@ The AI will progressively become more advanced throughout development, eventuall
 
 ## 🚧 Current Status
 
-**Day 4 — Arcade UI, Difficulty & Match Flow — COMPLETE ✅**
+**Day 5 — Predictive AI & Match Statistics — COMPLETE ✅**
 
-The core Pong gameplay loop is functional and has now been wrapped in a complete arcade-style game flow. The game includes a player paddle, AI opponent paddle, circular ball, wall and paddle collision, smooth rule-based AI movement, increasing ball speed, score tracking, randomized ball launches, selectable match points, Easy/Normal/Hard/Extreme difficulty, Endless Mode, pause/resume/restart/exit controls, a retro arcade UI, animated home screen, difficulty selection and saving, READY/GO transitions, and dedicated win/loss end screens with restart, main menu, and difficulty options.
+The core Pong gameplay loop is functional and has now been extended with a stronger AI baseline and match statistics. The arcade-style game flow remains in place. The game includes a player paddle, AI opponent paddle, circular ball, wall and paddle collision, smooth rule-based AI movement, increasing ball speed, score tracking, randomized ball launches, selectable match points, Easy/Normal/Hard/Extreme difficulty, Endless Mode, pause/resume/restart/exit controls, a retro arcade UI, animated home screen, difficulty selection and saving, READY/GO transitions, and dedicated win/loss end screens with restart, main menu, and difficulty options.
 
 ### Development Progress
 
@@ -62,6 +62,10 @@ The core Pong gameplay loop is functional and has now been wrapped in a complete
 - [x] Add win / loss end screens
 - [x] Add difficulty saving with localStorage
 - [x] Add retro arcade UI and animated home screen
+- [x] Add predictive AI behavior
+- [x] Make difficulty levels meaningfully different
+- [x] Add controlled AI unpredictability on higher difficulties
+- [x] Add match statistics (rally count and longest rally)
 - [ ] Add dynamic difficulty-based ball speed
 - [ ] Add power-up system
 - [ ] Create reinforcement learning environment
@@ -119,7 +123,9 @@ Planned power-ups include:
 
 ## 🤖 Current AI
 
-Day 3 uses a simple rule-based opponent. The AI tracks the ball while it is traveling toward the opponent and moves smoothly toward the ball's horizontal position.
+Day 3 uses a simple rule-based opponent. The AI now uses progressively stronger rule-based behavior. Easy primarily follows the ball directly, Normal uses partial prediction, Hard uses stronger prediction, and Extreme combines prediction with controlled targeting errors and occasional fake movement. The AI predicts where the ball will reach the opponent's side while accounting for horizontal wall bounces.
+
+Match statistics currently track completed rallies and the longest rally, providing a baseline for future comparisons between rule-based and reinforcement-learning agents.
 
 This is intentionally not reinforcement learning yet. The rule-based AI provides a working baseline that can later be compared against a trained RL agent.
 
