@@ -76,18 +76,18 @@ const difficultySettings = {
         fakeChance: 0.02
     },
     hard: {
-        speed: 12,
-        reaction: 0.18,
-        maximumError: 42,
-        prediction: 0.78,
-        fakeChance: 0.06
+        speed: 14,
+        reaction: 0.21,
+        maximumError: 30,
+        prediction: 0.88,
+        fakeChance: 0.09
     },
     extreme: {
-        speed: 15,
-        reaction: 0.245,
-        maximumError: 22,
+        speed: 17,
+        reaction: 0.29,
+        maximumError: 14,
         prediction: 1,
-        fakeChance: 0.12
+        fakeChance: 0.16
     }
 };
 
@@ -114,6 +114,14 @@ let nextAiFakeUpdate = 0;
 
 let rallyCount = 0;
 let longestRally = 0;
+
+// Day 6 power-up state
+const powerUpTypes = ["big-paddle","small-paddle","speed-boost","slow-ball","magnetic-ball","multi-ball","big-ball","small-ball","reverse-controls","screen-shake","ball-speed-up"];
+const powerUpDurations = {"big-paddle":8000,"small-paddle":8000,"speed-boost":7000,"slow-ball":7000,"magnetic-ball":8000,"multi-ball":6000,"big-ball":7000,"small-ball":7000,"reverse-controls":5000,"screen-shake":4500,"ball-speed-up":5000};
+const powerUpState = {active:false,type:null,x:0,y:-30,speed:70};
+let activePowerUp = null;
+let powerUpSpawnAt = 0;
+let gameOrientation = "vertical";
 
 let playerScore = 0;
 let opponentScore = 0;
@@ -438,6 +446,100 @@ function launchBall() {
     nextAiFakeUpdate = performance.now() + 1200;
 }
 
+function resetPowerUps() {
+    powerUpState.active = false;
+    powerUpState.type = null;
+    activePowerUp = null;
+    powerUpSpawnAt = performance.now() + 6000;
+    gameOrientation = "vertical";
+}
+function getPowerUpSpawnDelay() {
+    if (currentDifficulty === "easy") return 6500 + Math.random() * 2500;
+    if (currentDifficulty === "normal") return 8500 + Math.random() * 3500;
+    if (currentDifficulty === "hard") return 12000 + Math.random() * 4500;
+    return 16000 + Math.random() * 6000;
+}
+function choosePowerUpType() {
+    if (Math.random() < 0.14) return "mystery";
+    if ((currentDifficulty === "hard" || currentDifficulty === "extreme") && Math.random() < 0.08) return "orientation-shift";
+    return powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+}
+function activatePowerUp(type) {
+    if (type === "mystery") {
+        type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+    }
+    const duration = type === "orientation-shift" ? 5000 + Math.random() * 5000 : powerUpDurations[type] || 6000;
+    activePowerUp = {type:type,startedAt:performance.now(),duration:duration,remaining:duration};
+    if (type === "orientation-shift") gameOrientation = "horizontal";
+}
+function collectPowerUp() {
+    const type = powerUpState.type;
+    powerUpState.active = false;
+    powerUpState.type = null;
+    activatePowerUp(type);
+    powerUpSpawnAt = performance.now() + getPowerUpSpawnDelay();
+}
+function updatePowerUps() {
+    if (!gameStarted || gameOver || isPaused || transitionActive) return;
+    const now = performance.now();
+    if (!powerUpState.active && !activePowerUp && now >= powerUpSpawnAt) {
+        powerUpState.active = true;
+        powerUpState.type = choosePowerUpType();
+        powerUpState.x = 25 + Math.random() * (canvas.width - 50);
+        powerUpState.y = -25;
+    }
+    if (powerUpState.active) {
+        powerUpState.y += powerUpState.speed / 60;
+        if (powerUpState.x >= player.x && powerUpState.x <= player.x + player.width &&
+            powerUpState.y + 18 >= player.y && powerUpState.y - 18 <= player.y + player.height) {
+            collectPowerUp();
+        } else if (powerUpState.y > canvas.height + 30) {
+            powerUpState.active = false;
+            powerUpState.type = null;
+            powerUpSpawnAt = now + getPowerUpSpawnDelay();
+        }
+    }
+    if (activePowerUp) {
+        activePowerUp.remaining = Math.max(0, activePowerUp.duration - (now - activePowerUp.startedAt));
+        if (activePowerUp.remaining <= 0) {
+            if (activePowerUp.type === "orientation-shift") gameOrientation = "vertical";
+            activePowerUp = null;
+        }
+    }
+}
+function drawPowerUp() {
+    if (!powerUpState.active) return;
+    const mystery = powerUpState.type === "mystery";
+    const color = mystery ? "#FFFFFF" : (powerUpState.type === "orientation-shift" ? "#9B2CFF" : "#F7C948");
+    ctx.save();
+    ctx.translate(powerUpState.x,powerUpState.y);
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(0,0,17,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = "#080914";
+    ctx.font = "bold 20px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(mystery ? "?" : "✦",0,1);
+    ctx.restore();
+}
+function updatePowerUpHud() {
+    const hud = document.getElementById("powerUpHud");
+    if (!hud) return;
+    if (!activePowerUp) {
+        hud.classList.remove("active");
+        return;
+    }
+    hud.classList.add("active");
+    const names = {"big-paddle":"BIG PADDLE","small-paddle":"SMALL PADDLE","speed-boost":"SPEED BOOST","slow-ball":"SLOW BALL","magnetic-ball":"MAGNETIC BALL","multi-ball":"MULTI-BALL","big-ball":"BIG BALL","small-ball":"SMALL BALL","reverse-controls":"REVERSE CONTROLS","screen-shake":"SCREEN SHAKE","ball-speed-up":"BALL SPEED UP","orientation-shift":"ORIENTATION SHIFT"};
+    document.getElementById("powerUpName").textContent = names[activePowerUp.type] || activePowerUp.type.toUpperCase();
+    document.getElementById("powerUpTime").textContent = (activePowerUp.remaining/1000).toFixed(1) + "s";
+    document.getElementById("powerUpBar").style.width = (activePowerUp.remaining / activePowerUp.duration * 100) + "%";
+}
+
 function beginMatch(introText) {
     hideEndScreen();
     gameStarted = true;
@@ -452,6 +554,7 @@ function beginMatch(introText) {
     opponentScore = 0;
     rallyCount = 0;
     longestRally = 0;
+    resetPowerUps();
 
     ball.visible = false;
     player.x = canvas.width / 2 - player.width / 2;
@@ -901,10 +1004,13 @@ function gameLoop() {
     updateBall();
     updateTransition();
     updateEndlessTimer();
+    updatePowerUps();
 
     drawPlayer();
     drawOpponent();
     drawBall();
+    drawPowerUp();
+    updatePowerUpHud();
 
     requestAnimationFrame(gameLoop);
 }
