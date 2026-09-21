@@ -578,10 +578,13 @@ function setGameOrientation(nextOrientation) {
         ball.velocityX = ball.velocityY;
         ball.velocityY = -oldVX;
     } else {
+        const oldX = ball.x;
+        const oldY = ball.y;
         const oldVX = ball.velocityX;
-        ball.x = cx + (ball.y - cy);
-        ball.y = cy - (ball.x - cx);
-        ball.velocityX = -ball.velocityY;
+        const oldVY = ball.velocityY;
+        ball.x = cx + (oldY - cy);
+        ball.y = cy - (oldX - cx);
+        ball.velocityX = -oldVY;
         ball.velocityY = oldVX;
     }
 
@@ -1233,10 +1236,20 @@ function gameLoop() {
     updateEndlessTimer();
     updatePowerUps();
 
+    const shaking = Boolean(getActivePowerUp("screen-shake"));
+    if (shaking) {
+        ctx.save();
+        const intensity = 2.4;
+        ctx.translate((Math.random() - 0.5) * intensity, (Math.random() - 0.5) * intensity);
+    }
+
     drawPlayer();
     drawOpponent();
     drawBall();
     drawPowerUp();
+
+    if (shaking) ctx.restore();
+
     updatePowerUpHud();
 
     requestAnimationFrame(gameLoop);
