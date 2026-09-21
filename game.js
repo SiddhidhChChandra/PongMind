@@ -118,9 +118,11 @@ let longestRally = 0;
 // Day 6 power-up state
 const powerUpTypes = ["big-paddle","small-paddle","speed-boost","slow-ball","magnetic-ball","multi-ball","big-ball","small-ball","reverse-controls","screen-shake","ball-speed-up"];
 const powerUpDurations = {"big-paddle":8000,"small-paddle":8000,"speed-boost":7000,"slow-ball":7000,"magnetic-ball":8000,"multi-ball":6000,"big-ball":7000,"small-ball":7000,"reverse-controls":5000,"screen-shake":4500,"ball-speed-up":5000};
-const powerUpState = {active:false,type:null,x:0,y:-30,speed:70};
+const powerUpState = {active:false,type:null,x:0,y:-30,speed:70,activePickups:[]};
 let activePowerUp = null;
+let activePowerUps = [];
 let powerUpSpawnAt = 0;
+let powerUpSpawnCount = 1;
 let gameOrientation = "vertical";
 
 let playerScore = 0;
@@ -329,19 +331,25 @@ window.addEventListener("blur", function() {
     downPressed = false;
 });
 
+function getPowerUpCount(type) {
+    return activePowerUps.filter(effect => effect.type === type).length;
+}
+
 function getActivePowerUp(type) {
-    return activePowerUp && activePowerUp.type === type ? activePowerUp : null;
+    return activePowerUps.find(effect => effect.type === type) || null;
 }
 
 function getPlayerLength() {
     let length = 100;
-    if (getActivePowerUp("big-paddle")) length *= 1.35;
-    if (getActivePowerUp("small-paddle")) length *= 0.65;
-    return length;
+    const bigCount = getPowerUpCount("big-paddle");
+    const smallCount = getPowerUpCount("small-paddle");
+    if (bigCount) length *= Math.pow(1.35, bigCount);
+    if (smallCount) length *= Math.pow(0.65, smallCount);
+    return Math.max(35, Math.min(520, length));
 }
 
 function getPlayerSpeed() {
-    return player.speed * (getActivePowerUp("speed-boost") ? 1.45 : 1);
+    return player.speed * Math.pow(1.45, getPowerUpCount("speed-boost"));
 }
 
 function updatePlayer() {
@@ -349,7 +357,7 @@ function updatePlayer() {
 
     const length = getPlayerLength();
     const movementSpeed = getPlayerSpeed();
-    const reverse = Boolean(getActivePowerUp("reverse-controls"));
+    const reverse = getPowerUpCount("reverse-controls") % 2 === 1;
 
     if (gameOrientation === "horizontal") {
         player.width = 10;
@@ -491,8 +499,8 @@ function setDifficulty(difficulty) {
 
 function getCurrentBallSpeed() {
     let speed = Math.min(startingBallSpeed + rallyTime * speedIncreasePerSecond, maximumBallSpeed);
-    if (getActivePowerUp("slow-ball")) speed *= 0.65;
-    if (getActivePowerUp("ball-speed-up")) speed *= 1.35;
+    speed *= Math.pow(0.65, getPowerUpCount("slow-ball"));
+    speed *= Math.pow(1.35, getPowerUpCount("ball-speed-up"));
     return Math.min(speed, maximumBallSpeed);
 }
 
@@ -509,9 +517,9 @@ function applyPowerUpEffects() {
         opponent.width = 100;
         opponent.height = 10;
     }
-    if (activePowerUp && activePowerUp.type === "big-ball") ball.size = 22;
-    else if (activePowerUp && activePowerUp.type === "small-ball") ball.size = 9;
-    else ball.size = 14;
+    const bigBallCount = getPowerUpCount("big-ball");
+    const smallBallCount = getPowerUpCount("small-ball");
+    ball.size = Math.max(5, Math.min(42, 14 * Math.pow(1.55, bigBallCount) * Math.pow(0.68, smallBallCount)));
 }
 
 function launchBall() {
@@ -599,195 +607,255 @@ function clearFallingPowerUp() {
     powerUpState.y = -30;
 }
 
+function clearFallingPowerUps() {
+    powerUpState.active = false;
+    powerUpState.type = null;
+    powerUpState.x = 0;
+    powerUpState.y = -30;
+    powerUpState.activePickups = [];
+}
+
 function resetPowerUps() {
-    clearFallingPowerUp();
+    clearFallingPowerUps();
+    activePowerUps = [];
     activePowerUp = null;
     extraBalls = [];
     setGameOrientation("vertical");
     powerUpSpawnAt = Infinity;
+    powerUpSpawnCount = 1;
 }
 
 function scheduleNextPowerUpSpawn() {
     powerUpSpawnAt = performance.now() + getPowerUpSpawnDelay();
 }
+
 function getPowerUpSpawnDelay() {
-    if (currentDifficulty === "easy") return 6500 + Math.random() * 2500;
-    if (currentDifficulty === "normal") return 8500 + Math.random() * 3500;
-    if (currentDifficulty === "hard") return 12000 + Math.random() * 4500;
-    return 16000 + Math.random() * 6000;
+    const elapsed = Math.max(0, rallyTime);
+    if (currentDifficulty === "easy") return Math.max(3500, 6500 - elapsed * 45) + Math.random() * 1800;
+    if (currentDifficulty === "normal") return Math.max(3000, 8500 - elapsed * 65) + Math.random() * 1800;
+    if (currentDifficulty === "hard") return Math.max(2400, 12000 - elapsed * 90) + Math.random() * 1600;
+    return Math.max(1900, 16000 - elapsed * 120) + Math.random() * 1400;
 }
+
+function getPowerUpSpawnCount() {
+    const elapsed = rallyTime;
+    if (elapsed < 12) return 1;
+    if (elapsed < 25) return Math.random() < 0.35 ? 2 : 1;
+    if (elapsed < 45) return Math.random() < 0.65 ? 2 : 1;
+    return Math.random() < 0.55 ? 3 : 2;
+}
+
 function choosePowerUpType() {
     if (Math.random() < 0.14) return "mystery";
     if ((currentDifficulty === "hard" || currentDifficulty === "extreme") && Math.random() < 0.08) return "orientation-shift";
     return powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
 }
+
 function activatePowerUp(type) {
     if (type === "mystery") {
         type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
     }
-    const duration = type === "orientation-shift" ? 5000 + Math.random() * 5000 : powerUpDurations[type] || 6000;
-    activePowerUp = {type:type,startedAt:performance.now(),duration:duration,remaining:duration};
+
+    const duration = type === "orientation-shift"
+        ? 5000 + Math.random() * 5000
+        : powerUpDurations[type] || 6000;
+
+    const effect = {
+        type,
+        startedAt: performance.now(),
+        duration,
+        remaining: duration
+    };
+
+    activePowerUps.push(effect);
+    activePowerUp = effect;
 
     if (type === "orientation-shift") {
         setGameOrientation("horizontal");
     }
 
     if (type === "multi-ball") {
-        extraBalls = [{
+        extraBalls.push({
             x: canvas.width / 2,
             y: canvas.height / 2,
             size: 11,
             velocityX: -ball.velocityX * 0.82,
             velocityY: -ball.velocityY * 0.82,
             visible: true
-        }];
+        });
     }
 }
-function collectPowerUp() {
-    const type = powerUpState.type;
-    powerUpState.active = false;
-    powerUpState.type = null;
-    activatePowerUp(type);
-    powerUpSpawnAt = performance.now() + getPowerUpSpawnDelay();
+
+function collectPowerUp(pickup) {
+    pickup.active = false;
+    activatePowerUp(pickup.type);
+    scheduleNextPowerUpSpawn();
 }
+
 function updatePowerUps() {
     if (!gameStarted || gameOver || isPaused || transitionActive) return;
+
     const now = performance.now();
-    if (!powerUpState.active && !activePowerUp && now >= powerUpSpawnAt) {
-        powerUpState.active = true;
-        powerUpState.type = choosePowerUpType();
-        powerUpState.x = 25 + Math.random() * (canvas.width - 50);
-        powerUpState.y = -25;
-        powerUpState.drift = (Math.random() * 2 - 1) * 0.75;
-        powerUpState.phase = Math.random() * Math.PI * 2;
+
+    if (powerUpSpawnAt !== Infinity && now >= powerUpSpawnAt) {
+        const spawnCount = getPowerUpSpawnCount();
+        for (let i = 0; i < spawnCount; i++) {
+            powerUpState.activePickups.push({
+                active: true,
+                type: choosePowerUpType(),
+                x: 25 + Math.random() * (canvas.width - 50),
+                y: -25 - i * 55,
+                speed: 65 + Math.random() * 18,
+                drift: (Math.random() * 2 - 1) * 0.75,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+        powerUpSpawnAt = Infinity;
     }
-    if (powerUpState.active) {
-        powerUpState.y += powerUpState.speed / 60;
-        powerUpState.phase += 0.07;
-        powerUpState.x += powerUpState.drift + Math.sin(powerUpState.phase) * 0.35;
-        if (powerUpState.x < 20 || powerUpState.x > canvas.width - 20) {
-            powerUpState.drift *= -1;
-            powerUpState.x = Math.max(20, Math.min(canvas.width - 20, powerUpState.x));
+
+    for (const pickup of powerUpState.activePickups) {
+        if (!pickup.active) continue;
+
+        pickup.y += pickup.speed / 60;
+        pickup.phase += 0.07;
+        pickup.x += pickup.drift + Math.sin(pickup.phase) * 0.35;
+
+        if (pickup.x < 20 || pickup.x > canvas.width - 20) {
+            pickup.drift *= -1;
+            pickup.x = Math.max(20, Math.min(canvas.width - 20, pickup.x));
         }
 
         const collected = gameOrientation === "horizontal"
-            ? powerUpState.x + 18 >= player.x && powerUpState.x - 18 <= player.x + player.width &&
-              powerUpState.y >= player.y && powerUpState.y <= player.y + player.height
-            : powerUpState.x >= player.x && powerUpState.x <= player.x + player.width &&
-              powerUpState.y + 18 >= player.y && powerUpState.y - 18 <= player.y + player.height;
+            ? pickup.x + 18 >= player.x && pickup.x - 18 <= player.x + player.width &&
+              pickup.y >= player.y && pickup.y <= player.y + player.height
+            : pickup.x >= player.x && pickup.x <= player.x + player.width &&
+              pickup.y + 18 >= player.y && pickup.y - 18 <= player.y + player.height;
 
         if (collected) {
-            collectPowerUp();
-        } else if (powerUpState.y > canvas.height + 30) {
-            powerUpState.active = false;
-            powerUpState.type = null;
-            powerUpSpawnAt = now + getPowerUpSpawnDelay();
+            collectPowerUp(pickup);
+        } else if (pickup.y > canvas.height + 30) {
+            pickup.active = false;
+            scheduleNextPowerUpSpawn();
         }
     }
-    if (activePowerUp) {
-        applyPowerUpEffects();
-        activePowerUp.remaining = Math.max(0, activePowerUp.duration - (now - activePowerUp.startedAt));
-        if (activePowerUp.remaining <= 0) {
-            if (activePowerUp.type === "orientation-shift") setGameOrientation("vertical");
-            if (activePowerUp.type === "multi-ball") extraBalls = [];
-            activePowerUp = null;
-            applyPowerUpEffects();
+
+    powerUpState.activePickups = powerUpState.activePickups.filter(pickup => pickup.active);
+
+    for (let i = activePowerUps.length - 1; i >= 0; i--) {
+        const effect = activePowerUps[i];
+        effect.remaining = Math.max(0, effect.duration - (now - effect.startedAt));
+
+        if (effect.remaining <= 0) {
+            if (effect.type === "orientation-shift") {
+                const anotherOrientation = activePowerUps.some((other, index) =>
+                    index !== i && other.type === "orientation-shift" && other.remaining > 0
+                );
+                if (!anotherOrientation) setGameOrientation("vertical");
+            }
+
+            if (effect.type === "multi-ball" && extraBalls.length) {
+                extraBalls.pop();
+            }
+
+            activePowerUps.splice(i, 1);
         }
     }
+
+    activePowerUp = activePowerUps.length ? activePowerUps[activePowerUps.length - 1] : null;
+    applyPowerUpEffects();
 }
+
 function drawPowerUp() {
-    if (!powerUpState.active) return;
+    if (!powerUpState.activePickups || !powerUpState.activePickups.length) return;
 
-    const mystery = powerUpState.type === "mystery";
-    const orientation = powerUpState.type === "orientation-shift";
     const debuffs = ["small-paddle","reverse-controls","screen-shake","ball-speed-up"];
-    const isDebuff = debuffs.includes(powerUpState.type);
 
-    let color = "#55E7FF";
-    let symbol = "+";
+    for (const pickup of powerUpState.activePickups) {
+        const mystery = pickup.type === "mystery";
+        const orientation = pickup.type === "orientation-shift";
+        const isDebuff = debuffs.includes(pickup.type);
 
-    if (mystery) {
-        color = "#FFFFFF";
-        symbol = "?";
-    } else if (orientation) {
-        color = "#9B2CFF";
-        symbol = "↔";
-    } else if (isDebuff) {
-        color = "#FF2BD6";
-        symbol = "−";
-    }
+        let color = "#39FF14";
+        let symbol = "+";
 
-    ctx.save();
-    ctx.translate(powerUpState.x, powerUpState.y);
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 20;
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = color;
-    ctx.fillStyle = "#080914";
-
-    // Different silhouettes make buffs, debuffs, and mystery pickups
-    // immediately recognizable before the player collects them.
-    ctx.beginPath();
-
-    if (mystery) {
-        // Mystery: rotating diamond.
-        ctx.rotate(Math.PI / 4);
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.95;
-        ctx.fillRect(-13, -13, 26, 26);
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = "#080914";
-        ctx.fillRect(-9, -9, 18, 18);
-    } else if (isDebuff) {
-        // Debuff: jagged warning shape.
-        const spikes = 8;
-        for (let i = 0; i < spikes; i++) {
-            const angle = (Math.PI * 2 * i) / spikes;
-            const radius = i % 2 === 0 ? 18 : 12;
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
+        if (mystery) {
+            color = "#FFFFFF";
+            symbol = "?";
+        } else if (orientation) {
+            color = "#9B2CFF";
+            symbol = "↔";
+        } else if (isDebuff) {
+            color = "#FF3030";
+            symbol = "−";
         }
-        ctx.closePath();
-        ctx.fillStyle = color;
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(0, 0, 11, 0, Math.PI * 2);
-        ctx.fillStyle = "#080914";
-        ctx.fill();
-    } else {
-        // Buff / special: clean circular pickup.
-        ctx.arc(0, 0, 17, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(0, 0, 11, 0, Math.PI * 2);
-        ctx.fillStyle = "#080914";
-        ctx.fill();
-    }
 
-    ctx.fillStyle = color === "#FFFFFF" ? "#080914" : "#FFFFFF";
-    ctx.font = "900 18px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(symbol, 0, 1);
-    ctx.restore();
+        ctx.save();
+        ctx.translate(pickup.x, pickup.y);
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 22;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+
+        ctx.beginPath();
+        if (mystery) {
+            ctx.rotate(Math.PI / 4);
+            ctx.fillRect(-13, -13, 26, 26);
+            ctx.rotate(-Math.PI / 4);
+        } else {
+            ctx.arc(0, 0, 17, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.fillStyle = "#080914";
+        ctx.font = "900 18px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(symbol, 0, 1);
+        ctx.restore();
+    }
 }
 function updatePowerUpHud() {
     const hud = document.getElementById("powerUpHud");
     if (!hud) return;
-    if (!activePowerUp) {
+
+    if (!activePowerUps.length) {
         hud.classList.remove("active");
         return;
     }
-    hud.classList.add("active");
-    const names = {"big-paddle":"BIG PADDLE","small-paddle":"SMALL PADDLE","speed-boost":"SPEED BOOST","slow-ball":"SLOW BALL","magnetic-ball":"MAGNETIC BALL","multi-ball":"MULTI-BALL","big-ball":"BIG BALL","small-ball":"SMALL BALL","reverse-controls":"REVERSE CONTROLS","screen-shake":"SCREEN SHAKE","ball-speed-up":"BALL SPEED UP","orientation-shift":"ORIENTATION SHIFT"};
-    document.getElementById("powerUpName").textContent = names[activePowerUp.type] || activePowerUp.type.toUpperCase();
-    document.getElementById("powerUpTime").textContent = (activePowerUp.remaining/1000).toFixed(1) + "s";
-    document.getElementById("powerUpBar").style.width = (activePowerUp.remaining / activePowerUp.duration * 100) + "%";
-}
 
+    hud.classList.add("active");
+
+    const names = {
+        "big-paddle":"BIG PADDLE",
+        "small-paddle":"SMALL PADDLE",
+        "speed-boost":"SPEED BOOST",
+        "slow-ball":"SLOW BALL",
+        "magnetic-ball":"MAGNETIC BALL",
+        "multi-ball":"MULTI-BALL",
+        "big-ball":"BIG BALL",
+        "small-ball":"SMALL BALL",
+        "reverse-controls":"REVERSE CONTROLS",
+        "screen-shake":"SCREEN SHAKE",
+        "ball-speed-up":"BALL SPEED UP",
+        "orientation-shift":"ORIENTATION SHIFT"
+    };
+
+    const visible = activePowerUps
+        .slice()
+        .sort((a,b) => a.remaining - b.remaining);
+
+    const label = visible.map(effect => {
+        const count = activePowerUps.filter(item => item.type === effect.type).length;
+        return (names[effect.type] || effect.type.toUpperCase()) + (count > 1 ? " x" + count : "");
+    });
+
+    document.getElementById("powerUpName").textContent = [...new Set(label)].join(" • ");
+    const shortest = visible[0];
+    document.getElementById("powerUpTime").textContent = (shortest.remaining / 1000).toFixed(1) + "s";
+    document.getElementById("powerUpBar").style.width =
+        (shortest.remaining / shortest.duration * 100) + "%";
+}
 function beginMatch(introText) {
     hideEndScreen();
     gameStarted = true;
@@ -1132,9 +1200,9 @@ function updateBall() {
     ball.velocityX *= currentSpeed / currentMagnitude;
     ball.velocityY *= currentSpeed / currentMagnitude;
 
-    if (getActivePowerUp("magnetic-ball") && gameOrientation === "vertical" && ball.velocityX !== 0) {
+    if (getPowerUpCount("magnetic-ball") > 0 && gameOrientation === "vertical" && ball.velocityX !== 0) {
         const targetX = player.x + player.width / 2;
-        ball.velocityX += (targetX - ball.x) * 0.0018;
+        ball.velocityX += (targetX - ball.x) * (0.0018 * getPowerUpCount("magnetic-ball"));
     }
 
     ball.x += ball.velocityX;
