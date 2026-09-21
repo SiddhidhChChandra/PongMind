@@ -18,7 +18,7 @@ The AI will progressively become more advanced throughout development, eventuall
 
 ## 🚧 Current Status
 
-**Day 6 — Power-Ups, Debuffs & Orientation Shift — IN PROGRESS 🚧**
+**Day 6 — Dynamic Difficulty, Power-Ups & Match Pressure — COMPLETE ✅**
 
 The core Pong gameplay loop is functional and has now been extended with a stronger AI baseline and match statistics. The arcade-style game flow remains in place. The game includes a player paddle, AI opponent paddle, circular ball, wall and paddle collision, smooth rule-based AI movement, increasing ball speed, score tracking, randomized ball launches, selectable match points, Easy/Normal/Hard/Extreme difficulty, Endless Mode, pause/resume/restart/exit controls, a retro arcade UI, animated home screen, difficulty selection and saving, READY/GO transitions, and dedicated win/loss end screens with restart, main menu, and difficulty options.
 
@@ -33,7 +33,7 @@ The core Pong gameplay loop is functional and has now been extended with a stron
 - [x] Keep paddle inside canvas boundaries
 - [x] Increase paddle movement speed
 - [x] Add mouse drag control
-- [x] Remove on-screen control buttons
+- [x] Replace drag controls with dedicated touch buttons
 - [x] Polish initial game UI
 - [x] Add opponent paddle
 - [x] Add ball
@@ -68,11 +68,16 @@ The core Pong gameplay loop is functional and has now been extended with a stron
 - [x] Add match statistics (rally count and longest rally)
 - [x] Add dynamic ball speed during rallies
 - [x] Add difficulty-specific AI tuning
+- [x] Add progressive difficulty-based ball speed curves
+- [x] Add long-rally Extreme fatigue / controlled imperfection
+- [x] Add match-point pressure and clutch AI behavior
+- [x] Add rare deceptive AI fake movement
 - [x] Add timed power-up effects
 - [x] Add power-up system
 - [x] Add positive and negative power-ups
 - [x] Add mystery power-up
 - [x] Add timed power-up HUD with countdown and progress bar
+- [x] Add difficulty-aware power-up clustering and stacking
 - [x] Add Hard/Extreme power-up frequency scaling
 - [x] Add Hard/Extreme Orientation Shift power-up
 - [x] Add horizontal gameplay orientation
@@ -92,7 +97,7 @@ The core Pong gameplay loop is functional and has now been extended with a stron
 - Predictive rule-based AI with wall-bounce prediction
 - Controlled AI unpredictability on higher difficulties
 - Pause, resume, restart, and exit match controls
-- Keyboard, mouse-drag, and touch controls
+- Keyboard controls and dedicated touch buttons
 - Retro arcade interface with animated home screen
 - Dedicated win/loss end screens
 - Rally count and longest-rally tracking
@@ -113,9 +118,11 @@ The core Pong gameplay loop is functional and has now been extended with a stron
 - Hard
 - Extreme
 
-Difficulty can be selected from the menu and saved for later. The current rule-based AI changes its movement speed, reaction behavior, and targeting error depending on the selected difficulty.
+Difficulty can be selected from the menu and saved for later. The current rule-based AI changes movement speed, reaction behavior, prediction strength, and targeting error depending on difficulty. Easy is designed to remain competent while giving the player room to learn; Hard inherits the previous Extreme baseline; Extreme is faster and more precise.
 
-Extreme currently includes controlled targeting errors and occasional fake movement. More advanced deceptive behavior can be explored later.
+Ball speed now follows difficulty-specific time curves, so surviving a rally gradually makes the ball faster. Long Extreme rallies introduce controlled imperfections so the AI remains beatable rather than becoming effectively unbeatable.
+
+When a match approaches game point, the AI enters pressure/clutch behavior within its current difficulty rather than suddenly changing difficulty. Extreme also has rare deceptive fake movement: the probability is deliberately low so the player cannot reliably predict when an ankle-breaker is coming.
 
 ### Endless Mode
 
@@ -141,7 +148,9 @@ Current effects include:
 - **Mystery (?)** — randomly activates a regular power-up
 - **Orientation Shift** — Hard/Extreme-only effect that rotates gameplay into a horizontal left-vs-right layout for a random 5–10 second duration
 
-Hard and Extreme keep the full power-up pool, but pickups appear less frequently. Orientation Shift is additionally restricted to those difficulties.
+Hard and Extreme keep the full power-up pool, but pickups appear less frequently and become more debuff-heavy during long rallies. Lower difficulties increasingly favor larger buff clusters after their ramp thresholds, while higher difficulties increasingly favor debuff stacking. Pickup clusters can reach four simultaneous falling pickups. Orientation Shift is additionally restricted to Hard/Extreme.
+
+Power-up pickups are suppressed completely during score, READY, and GO transitions; spawning resumes only after GO.
 
 ## 🎮 Current Game Flow
 
@@ -215,7 +224,7 @@ Each development step follows:
 
 **PLAN → IMPLEMENT → TEST → DOCUMENT → COMMIT**
 
-Day 6 focuses on making the power-up system a gameplay mechanic rather than a visual-only feature. The current implementation includes both buffs and debuffs, timed effects, mystery pickups, multi-ball, and a real horizontal gameplay orientation.
+Day 6 focuses on turning the power-up system into a real gameplay mechanic and building a dynamic difficulty curve. The implementation now includes buffs/debuffs, timed stacking effects, mystery pickups, multi-ball, horizontal Orientation Shift, progressive ball-speed curves, long-rally Extreme imperfections, rare deceptive AI movement, and match-point pressure behavior.
 
 ## 🚀 Future Improvements
 
@@ -228,4 +237,5 @@ Possible future additions include:
 - Player statistics
 - Leaderboards
 - Improved mobile controls
+- More advanced reinforcement-learning agents
 - More advanced AI difficulty and deceptive movement
