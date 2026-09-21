@@ -62,10 +62,10 @@ const opponent = {
 
 const difficultySettings = {
     easy: {
-        speed: 5.5,
-        reaction: 0.075,
-        maximumError: 115,
-        prediction: 0,
+        speed: 7,
+        reaction: 0.11,
+        maximumError: 55,
+        prediction: 0.50,
         fakeChance: 0
     },
     normal: {
@@ -75,19 +75,21 @@ const difficultySettings = {
         prediction: 0.35,
         fakeChance: 0.02
     },
+    // Hard inherits the previous Extreme baseline.
     hard: {
-        speed: 15,
-        reaction: 0.24,
-        maximumError: 24,
-        prediction: 0.94,
-        fakeChance: 0.07
-    },
-    extreme: {
         speed: 18,
         reaction: 0.38,
         maximumError: 7,
         prediction: 1,
         fakeChance: 0.025
+    },
+    // Extreme is faster and more precise, but its deceptive movement is rarer.
+    extreme: {
+        speed: 21,
+        reaction: 0.48,
+        maximumError: 4,
+        prediction: 1,
+        fakeChance: 0.008
     }
 };
 
@@ -101,9 +103,13 @@ const ball = {
     visible: false
 };
 
-const startingBallSpeed = 4.2;
-const maximumBallSpeed = 13.5;
-const speedIncreasePerSecond = 0.42;
+const ballSpeedCurves = {
+    easy:    [{t:0,s:2},{t:30,s:4},{t:60,s:6},{t:90,s:7},{t:120,s:8},{t:150,s:8.5},{t:180,s:9}],
+    normal:  [{t:0,s:3},{t:30,s:5},{t:60,s:6.5},{t:90,s:8},{t:120,s:9},{t:150,s:10},{t:180,s:10.5}],
+    hard:    [{t:0,s:4},{t:30,s:6},{t:60,s:7.5},{t:90,s:9},{t:120,s:10},{t:150,s:11},{t:180,s:12}],
+    extreme: [{t:0,s:5},{t:30,s:7},{t:60,s:8},{t:90,s:9.5},{t:120,s:10.5},{t:150,s:11.5},{t:180,s:12.5}]
+};
+const maximumBallSpeed = 14.5;
 
 let rallyStartTime = 0;
 let rallyTime = 0;
@@ -379,9 +385,46 @@ function updatePlayer() {
     if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
 }
 
+function getMatchPressure() {
+    if (isEndlessMode || winningScore <= 0) return 0;
+
+    const pressureStart = Math.max(1, winningScore - 2);
+    const highestScore = Math.max(playerScore, opponentScore);
+    if (highestScore < pressureStart) return 0;
+
+    if (highestScore >= winningScore - 1) return 1;
+    return 0.55;
+}
+
+function getDynamicAISettings() {
+    const base = difficultySettings[currentDifficulty];
+    const pressure = getMatchPressure();
+    const fatigue = currentDifficulty === "extreme"
+        ? Math.min(1, Math.max(0, (rallyTime - 90) / 120))
+        : 0;
+
+    const settings = { ...base };
+
+    // Long Extreme rallies create controlled opportunities without turning
+    // the AI into an intentionally weak opponent.
+    if (fatigue > 0) {
+        settings.maximumError += 7 * fatigue;
+        settings.reaction *= 1 - 0.14 * fatigue;
+    }
+
+    // Match-point pressure sharpens the AI within its own difficulty.
+    settings.maximumError *= 1 - 0.35 * pressure;
+    settings.reaction *= 1 + 0.22 * pressure;
+    settings.speed *= 1 + 0.08 * pressure;
+    settings.prediction = Math.min(1, settings.prediction + (1 - settings.prediction) * 0.35 * pressure);
+
+    return settings;
+}
+
 function updateAIUnpredictability() {
-    const settings = difficultySettings[currentDifficulty];
+    const settings = getDynamicAISettings();
     const unpredictability = Math.min(rallyTime / 18, 1);
+    const pressure = getMatchPressure();
     const now = performance.now();
 
     if (now >= nextAiErrorUpdate) {
@@ -396,13 +439,17 @@ function updateAIUnpredictability() {
     if (now >= nextAiFakeUpdate) {
         aiFakeOffset = 0;
 
-        if (Math.random() < settings.fakeChance * Math.max(0.5, unpredictability)) {
+        // Fakes are deliberately rare: the goal is surprise, not a readable pattern.
+        const fakeChance = settings.fakeChance * Math.max(0.5, unpredictability) * (1 - 0.35 * pressure);
+        if (Math.random() < fakeChance) {
             aiFakeOffset =
                 (Math.random() < 0.5 ? -1 : 1) *
-                (18 + Math.random() * 24);
+                (currentDifficulty === "extreme"
+                    ? 28 + Math.random() * 34
+                    : 18 + Math.random() * 24);
         }
 
-        nextAiFakeUpdate = now + (currentDifficulty === "extreme" ? 500 : 850);
+        nextAiFakeUpdate = now + (currentDifficulty === "extreme" ? 650 : 850);
     }
 }
 
@@ -441,7 +488,7 @@ function predictBallYAtOpponent() {
 function updateOpponent() {
     if (!gameStarted || transitionActive || gameOver || isPaused) return;
 
-    const settings = difficultySettings[currentDifficulty];
+    const settings = getDynamicAISettings();
 
     if (gameOrientation === "horizontal") {
         opponent.width = 10;
@@ -494,8 +541,26 @@ function setDifficulty(difficulty) {
     opponent.reaction = settings.reaction;
 }
 
+function getBaseBallSpeedAtTime(elapsed) {
+    const curve = ballSpeedCurves[currentDifficulty] || ballSpeedCurves.normal;
+    if (elapsed <= curve[0].t) return curve[0].s;
+
+    for (let i = 1; i < curve.length; i++) {
+        if (elapsed <= curve[i].t) {
+            const previous = curve[i - 1];
+            const current = curve[i];
+            const progress = (elapsed - previous.t) / (current.t - previous.t);
+            return previous.s + (current.s - previous.s) * progress;
+        }
+    }
+
+    const last = curve[curve.length - 1];
+    const extraTime = elapsed - last.t;
+    return Math.min(maximumBallSpeed, last.s + Math.min(4, extraTime / 60));
+}
+
 function getCurrentBallSpeed() {
-    let speed = Math.min(startingBallSpeed + rallyTime * speedIncreasePerSecond, maximumBallSpeed);
+    let speed = getBaseBallSpeedAtTime(Math.max(0, rallyTime));
     speed *= Math.pow(0.65, getPowerUpCount("slow-ball"));
     speed *= Math.pow(1.35, getPowerUpCount("ball-speed-up"));
     return Math.min(speed, maximumBallSpeed);
@@ -520,7 +585,7 @@ function applyPowerUpEffects() {
 }
 
 function launchBall() {
-    const speed = startingBallSpeed;
+    const speed = getBaseBallSpeedAtTime(0);
     const angle = Math.random() * 0.55 - 0.275;
     const direction = Math.random() < 0.5 ? -1 : 1;
 
@@ -858,6 +923,7 @@ function updatePowerUps() {
 }
 
 function drawPowerUp() {
+    if (transitionActive || gameOver || !gameStarted) return;
     if (!powerUpState.activePickups || !powerUpState.activePickups.length) return;
 
     const debuffs = ["small-paddle","reverse-controls","screen-shake","ball-speed-up"];
@@ -1001,6 +1067,8 @@ function startEndlessMode() {
 
 function resetBallAfterScore() {
     clearFallingPowerUp();
+    powerUpState.activePickups = [];
+    powerUpSpawnAt = Infinity;
     powerUpSpawnAt = Infinity;
     centerPaddles();
     extraBalls = [];
@@ -1032,6 +1100,10 @@ function showAnnouncement(text, color, animationClass) {
 
 function updateTransition() {
     if (!transitionActive || gameOver) return;
+
+    // No falling pickup can exist or spawn during SCORE / READY / GO.
+    powerUpState.activePickups = [];
+    powerUpSpawnAt = Infinity;
 
     const elapsed = performance.now() - transitionStartTime;
 
@@ -1071,6 +1143,10 @@ function updateTransition() {
 }
 
 function triggerScoreSequence(playerWon) {
+    clearFallingPowerUp();
+    powerUpState.activePickups = [];
+    powerUpSpawnAt = Infinity;
+
     const winnerClass = playerWon ? "player" : "ai";
     const winnerText = playerWon ? "PLAYER SCORED!" : "AI SCORED!";
     const winnerColor = playerWon ? "#55E7FF" : "#FF2BD6";
