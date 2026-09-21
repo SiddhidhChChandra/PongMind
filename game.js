@@ -918,9 +918,10 @@ function resetBallAfterScore() {
     ball.velocityY = 0;
     ball.visible = false;
 
-    if (activePowerUp && activePowerUp.type === "orientation-shift") {
+    if (getPowerUpCount("orientation-shift") > 0) {
         setGameOrientation("vertical");
-        activePowerUp = null;
+        activePowerUps = activePowerUps.filter(effect => effect.type !== "orientation-shift");
+        activePowerUp = activePowerUps.length ? activePowerUps[activePowerUps.length - 1] : null;
     }
 
     transitionActive = true;
