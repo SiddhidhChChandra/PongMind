@@ -926,7 +926,7 @@ function drawPowerUp() {
     if (transitionActive || gameOver || !gameStarted) return;
     if (!powerUpState.activePickups || !powerUpState.activePickups.length) return;
 
-    const debuffs = ["small-paddle","reverse-controls","screen-shake","ball-speed-up"];
+    const debuffs = ["small-paddle","small-ball","reverse-controls","screen-shake","ball-speed-up"];
 
     for (const pickup of powerUpState.activePickups) {
         const mystery = pickup.type === "mystery";
