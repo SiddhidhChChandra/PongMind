@@ -310,11 +310,32 @@ window.addEventListener("blur", function() {
     rightPressed = false;
 });
 
+function getActivePowerUp(type) {
+    return activePowerUp && activePowerUp.type === type ? activePowerUp : null;
+}
+
+function getPlayerWidth() {
+    let width = 100;
+    if (getActivePowerUp("big-paddle")) width *= 1.35;
+    if (getActivePowerUp("small-paddle")) width *= 0.65;
+    return width;
+}
+
+function getPlayerSpeed() {
+    return player.speed * (getActivePowerUp("speed-boost") ? 1.45 : 1);
+}
+
 function updatePlayer() {
     if (!gameStarted || transitionActive || gameOver || isPaused) return;
 
-    if (leftPressed) player.x -= player.speed;
-    if (rightPressed) player.x += player.speed;
+    player.width = getPlayerWidth();
+    const movementSpeed = getPlayerSpeed();
+    const reverse = Boolean(getActivePowerUp("reverse-controls"));
+    const left = reverse ? rightPressed : leftPressed;
+    const right = reverse ? leftPressed : rightPressed;
+
+    if (left) player.x -= movementSpeed;
+    if (right) player.x += movementSpeed;
 
     if (player.x < 0) player.x = 0;
     if (player.x + player.width > canvas.width) {
@@ -424,7 +445,17 @@ function setDifficulty(difficulty) {
 }
 
 function getCurrentBallSpeed() {
-    return Math.min(startingBallSpeed + rallyTime * speedIncreasePerSecond, maximumBallSpeed);
+    let speed = Math.min(startingBallSpeed + rallyTime * speedIncreasePerSecond, maximumBallSpeed);
+    if (getActivePowerUp("slow-ball")) speed *= 0.65;
+    if (getActivePowerUp("ball-speed-up")) speed *= 1.35;
+    return Math.min(speed, maximumBallSpeed);
+}
+
+function applyPowerUpEffects() {
+    player.width = getPlayerWidth();
+    if (activePowerUp && activePowerUp.type === "big-ball") ball.size = 22;
+    else if (activePowerUp && activePowerUp.type === "small-ball") ball.size = 9;
+    else ball.size = 14;
 }
 
 function launchBall() {
@@ -440,6 +471,7 @@ function launchBall() {
 
     rallyStartTime = performance.now();
     rallyTime = 0;
+    applyPowerUpEffects();
     aiTargetError = 0;
     aiFakeOffset = 0;
     nextAiErrorUpdate = performance.now() + 1000;
@@ -500,10 +532,12 @@ function updatePowerUps() {
         }
     }
     if (activePowerUp) {
+        applyPowerUpEffects();
         activePowerUp.remaining = Math.max(0, activePowerUp.duration - (now - activePowerUp.startedAt));
         if (activePowerUp.remaining <= 0) {
             if (activePowerUp.type === "orientation-shift") gameOrientation = "vertical";
             activePowerUp = null;
+            applyPowerUpEffects();
         }
     }
 }
@@ -780,6 +814,7 @@ function updateBall() {
     rallyTime = (performance.now() - rallyStartTime) / 1000;
 
     const currentSpeed = getCurrentBallSpeed();
+    applyPowerUpEffects();
     const currentMagnitude = Math.sqrt(ball.velocityX ** 2 + ball.velocityY ** 2);
 
     if (currentMagnitude > 0) {
@@ -790,6 +825,17 @@ function updateBall() {
 
     ball.x += ball.velocityX;
     ball.y += ball.velocityY;
+
+    if (getActivePowerUp("magnetic-ball") && ball.velocityX !== 0) {
+        const targetX = player.x + player.width / 2;
+        ball.velocityX += (targetX - ball.x) * 0.0018;
+    }
+
+    if (getActivePowerUp("screen-shake")) {
+        const shake = 1.8;
+        ctx.save();
+        ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+    }
 
     if (ball.x - ball.size / 2 <= 0 || ball.x + ball.size / 2 >= canvas.width) {
         ball.velocityX = -ball.velocityX;
@@ -856,6 +902,8 @@ function updateBall() {
         ball.velocityY = Math.cos(finalAngle) * currentSpeed;
         ball.y = opponent.y + opponent.height + ball.size / 2;
     }
+
+    if (getActivePowerUp("screen-shake")) ctx.restore();
 
     if (ballTop > canvas.height) scorePoint(false);
     if (ballBottom < 0) scorePoint(true);
