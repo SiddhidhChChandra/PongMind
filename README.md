@@ -18,7 +18,7 @@ The AI will progressively become more advanced throughout development, eventuall
 
 ## 🚧 Current Status
 
-**Day 5 — Predictive AI & Match Statistics — COMPLETE ✅**
+**Day 6 — Power-Ups, Debuffs & Orientation Shift — IN PROGRESS 🚧**
 
 The core Pong gameplay loop is functional and has now been extended with a stronger AI baseline and match statistics. The arcade-style game flow remains in place. The game includes a player paddle, AI opponent paddle, circular ball, wall and paddle collision, smooth rule-based AI movement, increasing ball speed, score tracking, randomized ball launches, selectable match points, Easy/Normal/Hard/Extreme difficulty, Endless Mode, pause/resume/restart/exit controls, a retro arcade UI, animated home screen, difficulty selection and saving, READY/GO transitions, and dedicated win/loss end screens with restart, main menu, and difficulty options.
 
@@ -67,8 +67,15 @@ The core Pong gameplay loop is functional and has now been extended with a stron
 - [x] Add controlled AI unpredictability on higher difficulties
 - [x] Add match statistics (rally count and longest rally)
 - [x] Add dynamic ball speed during rallies
-- [ ] Add difficulty-specific ball speed
-- [ ] Add power-up system
+- [x] Add difficulty-specific AI tuning
+- [x] Add timed power-up effects
+- [x] Add power-up system
+- [x] Add positive and negative power-ups
+- [x] Add mystery power-up
+- [x] Add timed power-up HUD with countdown and progress bar
+- [x] Add Hard/Extreme power-up frequency scaling
+- [x] Add Hard/Extreme Orientation Shift power-up
+- [x] Add horizontal gameplay orientation
 - [ ] Create reinforcement learning environment
 - [ ] Train reinforcement learning agent
 - [ ] Integrate trained AI
@@ -115,17 +122,26 @@ Extreme currently includes controlled targeting errors and occasional fake movem
 **Endless Mode is now implemented.** It removes the fixed winning score and runs for **10 minutes**. The player with the highest score when time expires wins.
 
 ### Power-Ups
-Planned power-ups include:
 
-- Larger paddle
-- Smaller paddle
-- Faster ball
-- Slower ball
-- Larger ball
-- Smaller ball
-- Multi-ball
-- Magnet ball
-- Other positive and negative effects
+Day 6 introduces a timed power-up system. Pickups fall from the top of the arena with slight randomized drifting. If the player intercepts a pickup, its effect activates and a HUD at the bottom shows the effect name, remaining time, and a shrinking duration bar.
+
+Current effects include:
+
+- **Big Paddle** — increases player paddle length
+- **Small Paddle** — decreases player paddle length
+- **Speed Boost** — increases player movement speed
+- **Slow Ball** — reduces ball speed
+- **Ball Speed Up** — increases ball speed
+- **Big Ball** — increases ball size
+- **Small Ball** — decreases ball size
+- **Magnetic Ball** — gently pulls the ball toward the player paddle
+- **Multi-Ball** — creates an additional ball
+- **Reverse Controls** — reverses player movement
+- **Screen Shake** — adds visual shake while active
+- **Mystery (?)** — randomly activates a regular power-up
+- **Orientation Shift** — Hard/Extreme-only effect that rotates gameplay into a horizontal left-vs-right layout for a random 5–10 second duration
+
+Hard and Extreme keep the full power-up pool, but pickups appear less frequently. Orientation Shift is additionally restricted to those difficulties.
 
 ## 🎮 Current Game Flow
 
@@ -198,6 +214,8 @@ PongMind is being developed incrementally.
 Each development step follows:
 
 **PLAN → IMPLEMENT → TEST → DOCUMENT → COMMIT**
+
+Day 6 focuses on making the power-up system a gameplay mechanic rather than a visual-only feature. The current implementation includes both buffs and debuffs, timed effects, mystery pickups, multi-ball, and a real horizontal gameplay orientation.
 
 ## 🚀 Future Improvements
 
