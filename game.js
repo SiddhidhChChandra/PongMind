@@ -76,18 +76,18 @@ const difficultySettings = {
         fakeChance: 0.02
     },
     hard: {
-        speed: 14,
-        reaction: 0.21,
-        maximumError: 30,
-        prediction: 0.88,
-        fakeChance: 0.09
+        speed: 15,
+        reaction: 0.24,
+        maximumError: 24,
+        prediction: 0.94,
+        fakeChance: 0.07
     },
     extreme: {
-        speed: 17,
-        reaction: 0.29,
-        maximumError: 14,
+        speed: 18,
+        reaction: 0.38,
+        maximumError: 7,
         prediction: 1,
-        fakeChance: 0.16
+        fakeChance: 0.025
     }
 };
 
@@ -242,8 +242,10 @@ endlessButton.addEventListener("click", function(event) {
 document.addEventListener("keydown", function(event) {
     if (gameScreen.classList.contains("hidden")) return;
 
-    if (!gameStarted && (event.key === " " || event.key === "Enter")) {
-        startConfiguredGame();
+    // Enter/Space must never accidentally activate a focused button or
+    // restart the current match. Starting/restarting is done through the UI.
+    if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
         return;
     }
 
@@ -251,8 +253,6 @@ document.addEventListener("keydown", function(event) {
     if (event.key === "d" || event.key === "D" || event.key === "ArrowRight") rightPressed = true;
     if (event.key === "w" || event.key === "W" || event.key === "ArrowUp") upPressed = true;
     if (event.key === "s" || event.key === "S" || event.key === "ArrowDown") downPressed = true;
-
-    if (event.key === " " && gameOver) restartGame();
 });
 
 document.addEventListener("keyup", function(event) {
@@ -394,7 +394,7 @@ function updateAIUnpredictability() {
         if (Math.random() < settings.fakeChance * Math.max(0.5, unpredictability)) {
             aiFakeOffset =
                 (Math.random() < 0.5 ? -1 : 1) *
-                (35 + Math.random() * 70);
+                (18 + Math.random() * 24);
         }
 
         nextAiFakeUpdate = now + (currentDifficulty === "extreme" ? 500 : 850);
