@@ -592,13 +592,23 @@ function setGameOrientation(nextOrientation) {
     centerPaddles();
 }
 
-function resetPowerUps() {
+function clearFallingPowerUp() {
     powerUpState.active = false;
     powerUpState.type = null;
+    powerUpState.x = 0;
+    powerUpState.y = -30;
+}
+
+function resetPowerUps() {
+    clearFallingPowerUp();
     activePowerUp = null;
     extraBalls = [];
     setGameOrientation("vertical");
-    powerUpSpawnAt = performance.now() + 6000;
+    powerUpSpawnAt = Infinity;
+}
+
+function scheduleNextPowerUpSpawn() {
+    powerUpSpawnAt = performance.now() + getPowerUpSpawnDelay();
 }
 function getPowerUpSpawnDelay() {
     if (currentDifficulty === "easy") return 6500 + Math.random() * 2500;
@@ -687,21 +697,81 @@ function updatePowerUps() {
 }
 function drawPowerUp() {
     if (!powerUpState.active) return;
+
     const mystery = powerUpState.type === "mystery";
-    const color = mystery ? "#FFFFFF" : (powerUpState.type === "orientation-shift" ? "#9B2CFF" : "#F7C948");
+    const orientation = powerUpState.type === "orientation-shift";
+    const debuffs = ["small-paddle","reverse-controls","screen-shake","ball-speed-up"];
+    const isDebuff = debuffs.includes(powerUpState.type);
+
+    let color = "#55E7FF";
+    let symbol = "+";
+
+    if (mystery) {
+        color = "#FFFFFF";
+        symbol = "?";
+    } else if (orientation) {
+        color = "#9B2CFF";
+        symbol = "↔";
+    } else if (isDebuff) {
+        color = "#FF2BD6";
+        symbol = "−";
+    }
+
     ctx.save();
-    ctx.translate(powerUpState.x,powerUpState.y);
-    ctx.fillStyle = color;
+    ctx.translate(powerUpState.x, powerUpState.y);
     ctx.shadowColor = color;
-    ctx.shadowBlur = 18;
-    ctx.beginPath();
-    ctx.arc(0,0,17,0,Math.PI*2);
-    ctx.fill();
+    ctx.shadowBlur = 20;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = color;
     ctx.fillStyle = "#080914";
-    ctx.font = "bold 20px Arial";
+
+    // Different silhouettes make buffs, debuffs, and mystery pickups
+    // immediately recognizable before the player collects them.
+    ctx.beginPath();
+
+    if (mystery) {
+        // Mystery: rotating diamond.
+        ctx.rotate(Math.PI / 4);
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.95;
+        ctx.fillRect(-13, -13, 26, 26);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "#080914";
+        ctx.fillRect(-9, -9, 18, 18);
+    } else if (isDebuff) {
+        // Debuff: jagged warning shape.
+        const spikes = 8;
+        for (let i = 0; i < spikes; i++) {
+            const angle = (Math.PI * 2 * i) / spikes;
+            const radius = i % 2 === 0 ? 18 : 12;
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, 11, 0, Math.PI * 2);
+        ctx.fillStyle = "#080914";
+        ctx.fill();
+    } else {
+        // Buff / special: clean circular pickup.
+        ctx.arc(0, 0, 17, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, 11, 0, Math.PI * 2);
+        ctx.fillStyle = "#080914";
+        ctx.fill();
+    }
+
+    ctx.fillStyle = color === "#FFFFFF" ? "#080914" : "#FFFFFF";
+    ctx.font = "900 18px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(mystery ? "?" : "✦",0,1);
+    ctx.fillText(symbol, 0, 1);
     ctx.restore();
 }
 function updatePowerUpHud() {
@@ -770,6 +840,8 @@ function startEndlessMode() {
 }
 
 function resetBallAfterScore() {
+    clearFallingPowerUp();
+    powerUpSpawnAt = Infinity;
     centerPaddles();
     extraBalls = [];
     ball.x = canvas.width / 2;
@@ -833,6 +905,7 @@ function updateTransition() {
 
         centerPaddles();
         launchBall();
+        scheduleNextPowerUpSpawn();
     }
 }
 
