@@ -603,6 +603,7 @@ function clearFallingPowerUp() {
     powerUpState.type = null;
     powerUpState.x = 0;
     powerUpState.y = -30;
+    powerUpState.activePickups = [];
 }
 
 function clearFallingPowerUps() {
@@ -722,8 +723,9 @@ function choosePowerUpType() {
         return "orientation-shift";
     }
 
+    const regularTotal = Math.max(0.001, buffChance + debuffChance);
     const regularRoll = Math.random();
-    if (regularRoll < buffChance) {
+    if (regularRoll < buffChance / regularTotal) {
         return buffPowerUps[Math.floor(Math.random() * buffPowerUps.length)];
     }
 
