@@ -264,64 +264,61 @@ document.addEventListener("keyup", function(event) {
     if (event.key === "s" || event.key === "S" || event.key === "ArrowDown") downPressed = false;
 });
 
-function movePaddleToPointer(clientX, clientY) {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const pointerX = (clientX - rect.left) * scaleX;
-    const pointerY = (clientY - rect.top) * scaleY;
+const leftControlButton = document.getElementById("leftControlButton");
+const rightControlButton = document.getElementById("rightControlButton");
+
+function setControlButtonState(button, pressed) {
+    button.classList.toggle("pressed", pressed);
+}
+
+function bindControlButton(button, direction) {
+    if (!button) return;
+
+    const press = function(event) {
+        event.preventDefault();
+        if (!gameStarted || gameOver || isPaused) return;
+        if (direction === "left") leftPressed = true;
+        if (direction === "right") rightPressed = true;
+        setControlButtonState(button, true);
+    };
+
+    const release = function(event) {
+        event.preventDefault();
+        if (direction === "left") leftPressed = false;
+        if (direction === "right") rightPressed = false;
+        setControlButtonState(button, false);
+    };
+
+    button.addEventListener("pointerdown", press);
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("pointerleave", release);
+    button.addEventListener("contextmenu", function(event) {
+        event.preventDefault();
+    });
+}
+
+bindControlButton(leftControlButton, "left");
+bindControlButton(rightControlButton, "right");
+
+function updateTouchControlLabels() {
+    if (!leftControlButton || !rightControlButton) return;
 
     if (gameOrientation === "horizontal") {
-        player.y = pointerY - player.height / 2;
-        if (player.y < 0) player.y = 0;
-        if (player.y + player.height > canvas.height) {
-            player.y = canvas.height - player.height;
-        }
-        return;
-    }
-
-    player.x = pointerX - player.width / 2;
-    if (player.x < 0) player.x = 0;
-    if (player.x + player.width > canvas.width) {
-        player.x = canvas.width - player.width;
+        leftControlButton.textContent = "▲";
+        rightControlButton.textContent = "▼";
+        leftControlButton.setAttribute("aria-label", "Move up");
+        rightControlButton.setAttribute("aria-label", "Move down");
+    } else {
+        leftControlButton.textContent = "◀";
+        rightControlButton.textContent = "▶";
+        leftControlButton.setAttribute("aria-label", "Move left");
+        rightControlButton.setAttribute("aria-label", "Move right");
     }
 }
 
-canvas.addEventListener("pointerdown", function(event) {
-    if (!gameStarted || gameOver || isPaused) return;
+updateTouchControlLabels();
 
-    if (event.pointerType === "mouse" && event.button === 0) {
-        mouseDragging = true;
-        canvas.setPointerCapture(event.pointerId);
-        movePaddleToPointer(event.clientX, event.clientY);
-    }
-
-    if (event.pointerType === "touch") {
-        event.preventDefault();
-        movePaddleToPointer(event.clientX, event.clientY);
-    }
-});
-
-canvas.addEventListener("pointermove", function(event) {
-    if (event.pointerType === "mouse" && mouseDragging) {
-        movePaddleToPointer(event.clientX, event.clientY);
-    }
-
-    if (event.pointerType === "touch") {
-        event.preventDefault();
-        movePaddleToPointer(event.clientX, event.clientY);
-    }
-});
-
-canvas.addEventListener("pointerup", function(event) {
-    if (event.pointerType === "mouse" && event.button === 0) {
-        mouseDragging = false;
-    }
-});
-
-canvas.addEventListener("pointercancel", function(event) {
-    if (event.pointerType === "mouse") mouseDragging = false;
-});
 
 window.addEventListener("blur", function() {
     mouseDragging = false;
@@ -362,8 +359,8 @@ function updatePlayer() {
     if (gameOrientation === "horizontal") {
         player.width = 10;
         player.height = length;
-        const up = reverse ? downPressed : upPressed;
-        const down = reverse ? upPressed : downPressed;
+        const up = reverse ? rightPressed : leftPressed;
+        const down = reverse ? leftPressed : rightPressed;
         if (up) player.y -= movementSpeed;
         if (down) player.y += movementSpeed;
         player.x = 20;
@@ -597,6 +594,7 @@ function setGameOrientation(nextOrientation) {
     }
 
     gameOrientation = nextOrientation;
+    updateTouchControlLabels();
     centerPaddles();
 }
 
@@ -637,23 +635,115 @@ function getPowerUpSpawnDelay() {
     return Math.max(1900, 16000 - elapsed * 120) + Math.random() * 1400;
 }
 
+const buffPowerUps = ["big-paddle","speed-boost","slow-ball","magnetic-ball","multi-ball","big-ball"];
+const debuffPowerUps = ["small-paddle","small-ball","reverse-controls","screen-shake","ball-speed-up"];
+const powerUpRampStarts = {
+    easy: 60,
+    normal: 70,
+    hard: 80,
+    extreme: 90
+};
+
+function getPowerUpRampIntensity() {
+    const start = powerUpRampStarts[currentDifficulty] || 60;
+    if (rallyTime < start) return 0;
+    return Math.min(1, (rallyTime - start) / 45);
+}
+
 function getPowerUpSpawnCount() {
     const elapsed = rallyTime;
-    if (elapsed < 12) return 1;
-    if (elapsed < 25) return Math.random() < 0.35 ? 2 : 1;
-    if (elapsed < 45) return Math.random() < 0.65 ? 2 : 1;
-    return Math.random() < 0.55 ? 3 : 2;
+    const ramp = getPowerUpRampIntensity();
+
+    if (ramp <= 0) {
+        if (elapsed < 12) return 1;
+        if (elapsed < 25) return Math.random() < 0.35 ? 2 : 1;
+        if (elapsed < 45) return Math.random() < 0.65 ? 2 : 1;
+        return Math.random() < 0.55 ? 3 : 2;
+    }
+
+    const roll = Math.random();
+
+    // After the difficulty-specific threshold, clusters gradually grow toward
+    // 2-4 simultaneous pickups. Lower difficulties favor larger clusters.
+    const profiles = {
+        easy:    {one:0.04, two:0.24, three:0.37},
+        normal:  {one:0.07, two:0.34, three:0.37},
+        hard:    {one:0.13, two:0.50, three:0.27},
+        extreme: {one:0.20, two:0.55, three:0.20}
+    };
+    const p = profiles[currentDifficulty] || profiles.normal;
+
+    const target =
+        roll < p.one ? 1 :
+        roll < p.one + p.two ? 2 :
+        roll < p.one + p.two + p.three ? 3 : 4;
+
+    // Blend the new cluster behavior in gradually so the threshold never
+    // creates a sudden "four pickups at once" spike.
+    const oldCount =
+        elapsed < 12 ? 1 :
+        elapsed < 25 ? (Math.random() < 0.35 ? 2 : 1) :
+        elapsed < 45 ? (Math.random() < 0.65 ? 2 : 1) :
+        (Math.random() < 0.55 ? 3 : 2);
+
+    return Math.max(1, Math.min(4, Math.random() < ramp ? target : oldCount));
 }
 
 function choosePowerUpType() {
-    if (Math.random() < 0.14) return "mystery";
-    if ((currentDifficulty === "hard" || currentDifficulty === "extreme") && Math.random() < 0.08) return "orientation-shift";
-    return powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+    const ramp = getPowerUpRampIntensity();
+
+    // Before the threshold, keep the power-up pool relatively mixed.
+    // After it, each difficulty shifts the ecosystem in a different direction.
+    let buffChance = 0.55;
+    let debuffChance = 0.35;
+    const mysteryChance = 0.10;
+
+    if (ramp > 0) {
+        const targetWeights = {
+            easy:    {buff:0.78, debuff:0.12},
+            normal:  {buff:0.58, debuff:0.32},
+            hard:    {buff:0.30, debuff:0.60},
+            extreme: {buff:0.18, debuff:0.72}
+        };
+        const target = targetWeights[currentDifficulty] || targetWeights.normal;
+        buffChance = 0.55 + (target.buff - 0.55) * ramp;
+        debuffChance = 0.35 + (target.debuff - 0.35) * ramp;
+    }
+
+    const orientationChance =
+        (currentDifficulty === "hard" || currentDifficulty === "extreme")
+            ? 0.08
+            : 0;
+
+    const roll = Math.random();
+
+    if (roll < mysteryChance) return "mystery";
+    if (orientationChance > 0 && roll < mysteryChance + orientationChance) {
+        return "orientation-shift";
+    }
+
+    const regularRoll = Math.random();
+    if (regularRoll < buffChance) {
+        return buffPowerUps[Math.floor(Math.random() * buffPowerUps.length)];
+    }
+
+    return debuffPowerUps[Math.floor(Math.random() * debuffPowerUps.length)];
 }
 
 function activatePowerUp(type) {
     if (type === "mystery") {
-        type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+        const ramp = getPowerUpRampIntensity();
+        const targetWeights = {
+            easy: {buff:0.78, debuff:0.12},
+            normal: {buff:0.58, debuff:0.32},
+            hard: {buff:0.30, debuff:0.60},
+            extreme: {buff:0.18, debuff:0.72}
+        };
+        const target = targetWeights[currentDifficulty] || targetWeights.normal;
+        const buffChance = 0.55 + (target.buff - 0.55) * ramp;
+        type = Math.random() < buffChance
+            ? buffPowerUps[Math.floor(Math.random() * buffPowerUps.length)]
+            : debuffPowerUps[Math.floor(Math.random() * debuffPowerUps.length)];
     }
 
     const duration = type === "orientation-shift"
