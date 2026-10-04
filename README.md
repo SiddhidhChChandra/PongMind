@@ -1,241 +1,201 @@
-# PongMind 🎮🧠
+# PongMind
 
-PongMind is an AI-powered Pong game that combines game development with artificial intelligence and reinforcement learning.
+PongMind is an AI-powered retro Pong game built with vanilla HTML, CSS, and JavaScript.
 
-The project starts with a basic Pong implementation and gradually evolves into a game featuring adaptive AI opponents, multiple difficulty levels, power-ups, and eventually a reinforcement learning agent.
+It started as a classic Pong project and is being developed toward a more intelligent game environment, with reinforcement learning planned for a future stage.
 
-## 🎮 Play PongMind
+## Live Game
 
-**Live game:** https://siddhidhchchandra.github.io/PongMind/
+https://siddhidhchchandra.github.io/PongMind/
 
-Click the link to open the playable web version. The game opens with the arcade start screen, then lets you choose difficulty and match type before the **READY! → GO!** sequence begins.
-
-## 🎯 Project Goal
-
-The goal of PongMind is to build a playable Pong game where the player competes against an AI opponent.
-
-The AI will progressively become more advanced throughout development, eventually being trained using reinforcement learning.
-
-## 🚧 Current Status
-
-**Day 6 — Dynamic Difficulty, Power-Ups & Match Pressure — COMPLETE ✅**
-
-The core Pong gameplay loop is functional and has now been extended with a stronger AI baseline and match statistics. The arcade-style game flow remains in place. The game includes a player paddle, AI opponent paddle, circular ball, wall and paddle collision, smooth rule-based AI movement, increasing ball speed, score tracking, randomized ball launches, selectable match points, Easy/Normal/Hard/Extreme difficulty, Endless Mode, pause/resume/restart/exit controls, a retro arcade UI, animated home screen, difficulty selection and saving, READY/GO transitions, and dedicated win/loss end screens with restart, main menu, and difficulty options.
-
-### Development Progress
-
-- [x] Create GitHub repository
-- [x] Create initial README
-- [x] Create game canvas
-- [x] Add player paddle
-- [x] Add player keyboard controls
-- [x] Add mobile touch controls
-- [x] Keep paddle inside canvas boundaries
-- [x] Increase paddle movement speed
-- [x] Add mouse drag control
-- [x] Replace drag controls with dedicated touch buttons
-- [x] Polish initial game UI
-- [x] Add opponent paddle
-- [x] Add ball
-- [x] Implement ball movement
-- [x] Implement left/right wall bounce
-- [x] Implement player paddle collision
-- [x] Implement opponent paddle collision
-- [x] Make ball circular
-- [x] Add hit-position-based ball direction
-- [x] Add smooth rule-based AI opponent
-- [x] Increase ball speed during rallies
-- [x] Add score tracking
-- [x] Add point reset and randomized launches
-- [x] Add first-to-5 win condition
-- [x] Add score transition sequence
-- [x] Add centered score announcements
-- [x] Add READY / GO transition
-- [x] Add rounded paddles and ball
-- [x] Add game start prompt
-- [x] Add match-end winner announcement
-- [x] Add live game link
-- [x] Document Day 3 completion
-- [x] Add difficulty levels
-- [x] Add Endless Mode (10-minute high-score match)
-- [x] Add pause / resume / restart / exit match flow
-- [x] Add win / loss end screens
-- [x] Add difficulty saving with localStorage
-- [x] Add retro arcade UI and animated home screen
-- [x] Add predictive AI behavior
-- [x] Make difficulty levels meaningfully different
-- [x] Add controlled AI unpredictability on higher difficulties
-- [x] Add match statistics (rally count and longest rally)
-- [x] Add dynamic ball speed during rallies
-- [x] Add difficulty-specific AI tuning
-- [x] Add progressive difficulty-based ball speed curves
-- [x] Add long-rally Extreme fatigue / controlled imperfection
-- [x] Add match-point pressure and clutch AI behavior
-- [x] Add rare deceptive AI fake movement
-- [x] Add timed power-up effects
-- [x] Add power-up system
-- [x] Add positive and negative power-ups
-- [x] Add mystery power-up
-- [x] Add timed power-up HUD with countdown and progress bar
-- [x] Add difficulty-aware power-up clustering and stacking
-- [x] Add Hard/Extreme power-up frequency scaling
-- [x] Add Hard/Extreme Orientation Shift power-up
-- [x] Add horizontal gameplay orientation
-- [ ] Create reinforcement learning environment
-- [ ] Train reinforcement learning agent
-- [ ] Integrate trained AI
-- [x] Add basic match statistics
-- [ ] Add player statistics and persistent history
-- [ ] Deploy final version
-
-## 🎮 Implemented Features
-
-- Selectable match length: 3, 5, 7, 10, or 15 points
-- Easy, Normal, Hard, and Extreme difficulty
-- Saved difficulty preference using localStorage
-- 10-minute Endless Mode
-- Predictive rule-based AI with wall-bounce prediction
-- Controlled AI unpredictability on higher difficulties
-- Pause, resume, restart, and exit match controls
-- Keyboard controls and dedicated touch buttons
-- Retro arcade interface with animated home screen
-- Dedicated win/loss end screens
-- Rally count and longest-rally tracking
-
-## 🎮 Planned Features
+## Current Features
 
 ### Gameplay
-- Player vs AI
-- Score tracking
-- Increasing ball speed
-- First-to-5 win condition
-- Multiple difficulty levels
-- Endless Mode with a 10-minute time limit
+- Classic Pong-style 1v1 gameplay
+- First-to-3 / 5 / 7 / 10 / 15 match options
+- 10-minute Endless Mode
+- Score transitions with READY / GO sequences
+- Match-end screen with final score and rally statistics
+- Pause, resume, restart, and exit controls
 
-### Difficulty Levels
-- Easy
-- Normal
-- Hard
-- Extreme
+### AI Opponent
+Four difficulty levels:
+- **Easy** — forgiving movement and larger prediction error
+- **Normal** — balanced opponent
+- **Hard** — fast predictive defense with much smaller error
+- **Extreme** — very fast, highly precise, and designed to remain challenging during long rallies
 
-Difficulty can be selected from the menu and saved for later. The current rule-based AI changes movement speed, reaction behavior, prediction strength, and targeting error depending on difficulty. Easy is designed to remain competent while giving the player room to learn; Hard inherits the previous Extreme baseline; Extreme is faster and more precise.
+The AI uses:
+- Ball trajectory prediction
+- Wall-bounce prediction
+- Dynamic reaction and movement settings
+- Controlled targeting error
+- Rare deceptive movement
+- Match-pressure adjustments
+- Extreme-mode fatigue over very long rallies
 
-Ball speed now follows difficulty-specific time curves, so surviving a rally gradually makes the ball faster. Long Extreme rallies introduce controlled imperfections so the AI remains beatable rather than becoming effectively unbeatable.
+## Power-Up System
 
-When a match approaches game point, the AI enters pressure/clutch behavior within its current difficulty rather than suddenly changing difficulty. Extreme also has rare deceptive fake movement: the probability is deliberately low so the player cannot reliably predict when an ankle-breaker is coming.
+PongMind has a dynamic power-up system containing both buffs and debuffs.
 
-### Endless Mode
+### Buffs
+- Big Paddle
+- Speed Boost
+- Slow Ball
+- Magnetic Ball
+- Multi-Ball
+- Big Ball
 
-**Endless Mode is now implemented.** It removes the fixed winning score and runs for **10 minutes**. The player with the highest score when time expires wins.
+### Debuffs
+- Small Paddle
+- Reverse Controls
+- Screen Shake
+- Ball Speed Up
+- Small Ball
 
-### Power-Ups
+### Special Power-Ups
+- **Mystery** — randomly selects a buff or debuff based on difficulty
+- **Orientation Shift** — temporarily rotates gameplay from vertical Pong into horizontal Pong
 
-Day 6 introduces a timed power-up system. Pickups fall from the top of the arena with slight randomized drifting. If the player intercepts a pickup, its effect activates and a HUD at the bottom shows the effect name, remaining time, and a shrinking duration bar.
+Power-ups can stack, with effects scaling according to the number of active copies.
 
-Current effects include:
+## Day 7 — Multi-Ball AI & Magnetic Combos
 
-- **Big Paddle** — increases player paddle length
-- **Small Paddle** — decreases player paddle length
-- **Speed Boost** — increases player movement speed
-- **Slow Ball** — reduces ball speed
-- **Ball Speed Up** — increases ball speed
-- **Big Ball** — increases ball size
-- **Small Ball** — decreases ball size
-- **Magnetic Ball** — gently pulls the ball toward the player paddle
-- **Multi-Ball** — creates an additional ball
-- **Reverse Controls** — reverses player movement
-- **Screen Shake** — adds visual shake while active
-- **Mystery (?)** — randomly activates a regular power-up
-- **Orientation Shift** — Hard/Extreme-only effect that rotates gameplay into a horizontal left-vs-right layout for a random 5–10 second duration
+Day 7 focused on turning Multi-Ball from a simple visual effect into a real gameplay mechanic.
 
-Hard and Extreme keep the full power-up pool, but pickups appear less frequently and become more debuff-heavy during long rallies. Lower difficulties increasingly favor larger buff clusters after their ramp thresholds, while higher difficulties increasingly favor debuff stacking. Pickup clusters can reach four simultaneous falling pickups. Orientation Shift is additionally restricted to Hard/Extreme.
+### Multi-Ball
+Multi-Ball creates **5 balls** in play.
 
-Power-up pickups are suppressed completely during score, READY, and GO transitions; spawning resumes only after GO.
+The rule is intentionally strict:
 
-## 🎮 Current Game Flow
+> **If even ONE ball gets past a paddle, that player loses the rally.**
 
-1. Home screen → click anywhere to enter the menu
-2. Choose difficulty → play immediately or save the choice for later
-3. Start a normal match with selectable match points, or start a 10-minute Endless Run
-4. READY → GO → gameplay
-5. Pause with the on-screen control or **Escape**
-6. Pause menu supports **Resume**, **Restart Match**, and **Exit Match**
-7. At match end, a dedicated win/loss screen provides **Restart Again**, **Main Menu**, and **Change Difficulty**
+So:
+- AI misses 1 ball → Player gets the point
+- Player misses 1 ball → AI gets the point
+- All balls are returned → rally continues
 
-## 🤖 Current AI
+### Multi-Ball AI Scaling
 
-The current AI is a rule-based baseline built incrementally across the project. The AI now uses progressively stronger rule-based behavior. Easy primarily follows the ball directly, Normal uses partial prediction, Hard uses stronger prediction, and Extreme combines prediction with controlled targeting errors and occasional fake movement. The AI predicts where the ball will reach the opponent's side while accounting for horizontal wall bounces.
+The AI now becomes increasingly capable as the number of active balls increases.
 
-Match statistics currently track completed rallies and the longest rally, providing a baseline for future comparisons between rule-based and reinforcement-learning agents.
+With more balls, the AI:
+- Tracks multiple active threats
+- Prioritizes the most urgent incoming ball
+- Increases reaction strength
+- Improves prediction
+- Reduces targeting error
+- Becomes increasingly effective at higher difficulties
 
-This is intentionally not reinforcement learning yet. The rule-based AI provides a working baseline that can later be compared against a trained RL agent.
+Easy remains deliberately imperfect, while Extreme becomes highly capable without becoming mathematically perfect.
 
-## 🧠 Reinforcement Learning Concept
+### Magnetic + Multi-Ball
 
-The eventual AI agent will operate using a cycle similar to:
+Magnetic Ball now supports multiple balls when combined with Multi-Ball.
 
-State → Action → Environment → Reward → Next State
+When both effects overlap:
+- Balls reaching the player's paddle can be captured
+- Multiple balls can be held simultaneously
+- Held balls remain attached to the paddle
+- Right-click or double-tap launches all held balls
+- Each released ball receives a slightly different trajectory
+- Magnetic capture can continue while Multi-Ball remains active
 
-Possible state information may include:
+This creates a genuine combo mechanic rather than treating the two power-ups as independent effects.
 
-- Ball position
-- Ball velocity
-- AI paddle position
-- Player paddle position
+## Controls
 
-Possible actions:
+### Desktop
+- **A / D** or **Left / Right Arrow** — move paddle
+- **W / S** or **Up / Down Arrow** — orientation-shift movement
+- **ESC** — pause
+- **Right-click** — launch Magnetic Ball(s)
 
-- Move up
-- Stay
-- Move down
+### Mobile
+- On-screen movement buttons
+- **Double-tap the game canvas** — launch Magnetic Ball(s)
 
-## 🛠️ Planned Technology
+## Tech Stack
 
-### Game
-- HTML
-- CSS
-- JavaScript
-- HTML5 Canvas
+- HTML5
+- CSS3
+- Vanilla JavaScript
+- HTML Canvas
+- Local Storage for saved difficulty
+- GitHub Pages for deployment
 
-### AI / Machine Learning
-- Python
-- Google Colab
-- Reinforcement Learning
+No game engine or framework is used.
 
-### Deployment
-- GitHub Pages / Vercel
-- Progressive Web App (planned)
+## Development Progress
 
-## 📱 Platform Goals
+### Day 1–3
+- Project setup
+- Canvas game
+- Player and AI paddles
+- Ball physics
+- Collisions
+- Scoring
+- Match win conditions
+- Predictive opponent
 
-PongMind is intended to eventually work on:
+### Day 4
+- Retro arcade UI
+- Main menu
+- Difficulty selection
+- Match-point selection
+- Pause system
+- Endless Mode
+- End screen
+- Saved difficulty
 
-- 💻 Desktop
-- 📱 Android/mobile browsers
-- 🌐 Web
+### Day 5
+- Distinct difficulty behavior
+- Improved predictive AI
+- Dynamic ball-speed progression
+- Rally statistics
+- Match-pressure AI behavior
+- Controlled AI unpredictability
 
-An installable mobile version may be explored after the web version is complete.
+### Day 6
+- Full power-up system
+- Buff/debuff balancing
+- Stacking effects
+- Mystery power-up
+- Orientation Shift
+- Mobile controls
+- Power-up HUD
+- Dynamic spawn scaling
 
-## 📈 Development Approach
+### Day 7
+- Multi-Ball gameplay redesign
+- One-miss scoring rule
+- Multi-Ball-aware AI
+- Increasing AI capability with ball count
+- Multi-ball threat prioritization
+- Multi-Ball + Magnetic Ball combination
+- Multiple-ball magnetic capture
+- Multi-ball launch system
+- Final cleanup and removal of development test mode
 
-PongMind is being developed incrementally.
+## Future Direction
 
-Each development step follows:
+The long-term goal is to turn PongMind into an environment for experimenting with reinforcement learning.
 
-**PLAN → IMPLEMENT → TEST → DOCUMENT → COMMIT**
+Planned future work includes:
+- RL state representation
+- Action-space design
+- Reward design
+- Training an agent in Google Colab
+- Measuring win rate, rally length, and reward
+- Comparing rule-based AI against an RL agent
+- Integrating the learned policy into the game
+- PWA/mobile improvements
+- Automated testing and deeper game telemetry
 
-Day 6 focuses on turning the power-up system into a real gameplay mechanic and building a dynamic difficulty curve. The implementation now includes buffs/debuffs, timed stacking effects, mystery pickups, multi-ball, horizontal Orientation Shift, progressive ball-speed curves, long-rally Extreme imperfections, rare deceptive AI movement, and match-point pressure behavior.
+## Project Philosophy
 
-## 🚀 Future Improvements
+PongMind is being developed incrementally:
 
-Possible future additions include:
+**PLAN → LEARN → IMPLEMENT → TEST → DOCUMENT → COMMIT → PUSH**
 
-- Player vs Player mode
-- AI vs AI mode
-- Improved reinforcement learning agents
-- More power-ups
-- Player statistics
-- Leaderboards
-- Improved mobile controls
-- More advanced reinforcement-learning agents
-- More advanced AI difficulty and deceptive movement
+The objective is not just to make a playable Pong clone, but to gradually turn it into a small experimental platform for AI behavior and reinforcement learning.
