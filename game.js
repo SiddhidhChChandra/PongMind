@@ -1808,9 +1808,10 @@ function drawOneBall(activeBall) {
 }
 
 function drawBall() {
-    if (!ball.visible || transitionActive || gameOver || !gameStarted) return;
-    drawOneBall(ball);
+    if (transitionActive || gameOver || !gameStarted) return;
+    if (ball.visible) drawOneBall(ball);
     extraBalls.forEach(drawOneBall);
+    magneticHeldBalls.forEach(held => drawOneBall(held.ball));
 }
 
 function showEndScreen(playerWon) {
