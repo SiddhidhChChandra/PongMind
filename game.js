@@ -163,6 +163,44 @@ let lastTouchTapAt = 0;
 let isPaused = false;
 let pendingDifficulty = currentDifficulty;
 
+// Developer power-up test mode.
+// Enable with ?testPowerups=1 on the game URL.
+// This does not affect normal gameplay or normal power-up randomness.
+const powerUpTestMode = new URLSearchParams(window.location.search).get("testPowerups") === "1";
+let powerUpTestIndex = 0;
+const powerUpTestSequence = ["magnetic-ball", "multi-ball"];
+
+function runPowerUpTestSequence() {
+    if (!powerUpTestMode || !gameStarted || gameOver || transitionActive || isPaused) return;
+
+    const type = powerUpTestSequence[powerUpTestIndex % powerUpTestSequence.length];
+    powerUpTestIndex++;
+
+    // Clear any previous special test effect before starting the next one.
+    magneticBallHeld = false;
+    multiBallActive = false;
+    extraBalls = [];
+    activePowerUps = activePowerUps.filter(effect =>
+        effect.type !== "magnetic-ball" && effect.type !== "multi-ball"
+    );
+    activePowerUp = activePowerUps.length ? activePowerUps[activePowerUps.length - 1] : null;
+
+    activatePowerUp(type);
+}
+
+function schedulePowerUpTest() {
+    if (!powerUpTestMode) return;
+
+    // Give the normal match intro time to finish, then test both mechanics.
+    setTimeout(() => {
+        if (!gameOver && gameStarted) runPowerUpTestSequence();
+    }, 3500);
+
+    setTimeout(() => {
+        if (!gameOver && gameStarted) runPowerUpTestSequence();
+    }, 16000);
+}
+
 function showScreen(screenToShow) {
     [homeScreen, menuScreen, difficultyScreen, gameScreen].forEach(screen => {
         screen.classList.toggle("hidden", screen !== screenToShow);
@@ -265,6 +303,26 @@ document.addEventListener("keydown", function(event) {
     if (event.key === "d" || event.key === "D" || event.key === "ArrowRight") rightPressed = true;
     if (event.key === "w" || event.key === "W" || event.key === "ArrowUp") upPressed = true;
     if (event.key === "s" || event.key === "S" || event.key === "ArrowDown") downPressed = true;
+});
+
+document.addEventListener("keydown", function(event) {
+    if (!powerUpTestMode || !gameScreen || gameScreen.classList.contains("hidden")) return;
+    if (event.key.toLowerCase() === "m") {
+        event.preventDefault();
+        runPowerUpTestSequence();
+    }
+    if (event.key.toLowerCase() === "b") {
+        event.preventDefault();
+        if (!gameStarted || gameOver || transitionActive || isPaused) return;
+        magneticBallHeld = false;
+        multiBallActive = false;
+        extraBalls = [];
+        activePowerUps = activePowerUps.filter(effect =>
+            effect.type !== "magnetic-ball" && effect.type !== "multi-ball"
+        );
+        activePowerUp = activePowerUps.length ? activePowerUps[activePowerUps.length - 1] : null;
+        activatePowerUp("multi-ball");
+    }
 });
 
 document.addEventListener("keyup", function(event) {
@@ -1073,6 +1131,22 @@ function updatePowerUpHud() {
     const hud = document.getElementById("powerUpHud");
     if (!hud) return;
 
+    if (powerUpTestMode && gameStarted && !gameOver) {
+        const testLabel = document.getElementById("powerUpTestLabel");
+        if (!testLabel) {
+            const label = document.createElement("div");
+            label.id = "powerUpTestLabel";
+            label.textContent = "TEST MODE • M = MAGNETIC • B = MULTI-BALL";
+            label.style.cssText =
+                "position:fixed;left:50%;bottom:12px;transform:translateX(-50%);" +
+                "z-index:9999;padding:6px 10px;font:700 11px Arial,sans-serif;" +
+                "letter-spacing:1px;color:#fff;background:rgba(0,0,0,.72);" +
+                "border:1px solid rgba(255,255,255,.25);border-radius:999px;" +
+                "pointer-events:none;";
+            document.body.appendChild(label);
+        }
+    }
+
     if (!activePowerUps.length) {
         hud.classList.remove("active");
         return;
@@ -1144,6 +1218,7 @@ function beginMatch(introText) {
     updateScoreboard();
 
     showAnnouncement(introText, "#FFFFFF", "show-score");
+    schedulePowerUpTest();
 }
 
 function startConfiguredGame() {
