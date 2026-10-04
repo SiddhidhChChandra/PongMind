@@ -156,6 +156,10 @@ let upPressed = false;
 let downPressed = false;
 let mouseDragging = false;
 let extraBalls = [];
+let multiBallActive = false;
+let multiBallLastExitSide = null;
+let magneticBallHeld = false;
+let lastTouchTapAt = 0;
 let isPaused = false;
 let pendingDifficulty = currentDifficulty;
 
@@ -268,6 +272,30 @@ document.addEventListener("keyup", function(event) {
     if (event.key === "d" || event.key === "D" || event.key === "ArrowRight") rightPressed = false;
     if (event.key === "w" || event.key === "W" || event.key === "ArrowUp") upPressed = false;
     if (event.key === "s" || event.key === "S" || event.key === "ArrowDown") downPressed = false;
+});
+
+// Magnetic Ball launch gimmick:
+// Desktop: right-click while the ball is magnetically held.
+// Mobile: double-tap the game canvas.
+canvas.addEventListener("contextmenu", function(event) {
+    event.preventDefault();
+    launchMagneticBall();
+});
+
+canvas.addEventListener("dblclick", function(event) {
+    event.preventDefault();
+    launchMagneticBall();
+});
+
+canvas.addEventListener("touchend", function(event) {
+    const now = performance.now();
+    if (now - lastTouchTapAt < 320) {
+        event.preventDefault();
+        launchMagneticBall();
+        lastTouchTapAt = 0;
+        return;
+    }
+    lastTouchTapAt = now;
 });
 
 const leftControlButton = document.getElementById("leftControlButton");
@@ -584,6 +612,49 @@ function applyPowerUpEffects() {
     ball.size = Math.max(5, Math.min(42, 14 * Math.pow(1.55, bigBallCount) * Math.pow(0.68, smallBallCount)));
 }
 
+function attachMagneticBallToPaddle() {
+    if (!magneticBallHeld || !ball.visible) return;
+
+    if (gameOrientation === "horizontal") {
+        player.width = 10;
+        player.height = getPlayerLength();
+        ball.x = player.x + player.width + ball.size / 2 + 1;
+        ball.y = player.y + player.height / 2;
+    } else {
+        player.width = getPlayerLength();
+        player.height = 10;
+        ball.x = player.x + player.width / 2;
+        ball.y = player.y - ball.size / 2 - 1;
+    }
+
+    ball.velocityX = 0;
+    ball.velocityY = 0;
+}
+
+function launchMagneticBall() {
+    if (!magneticBallHeld || !gameStarted || gameOver || transitionActive || isPaused || !ball.visible) return;
+
+    magneticBallHeld = false;
+
+    activePowerUps = activePowerUps.filter(effect => effect.type !== "magnetic-ball");
+    activePowerUp = activePowerUps.length ? activePowerUps[activePowerUps.length - 1] : null;
+
+    const speed = Math.min(maximumBallSpeed, Math.max(2, getCurrentBallSpeed()));
+    const angle = (Math.random() * 2 - 1) * (Math.PI / 3);
+
+    if (gameOrientation === "horizontal") {
+        ball.velocityX = Math.cos(angle) * speed;
+        ball.velocityY = Math.sin(angle) * speed;
+    } else {
+        ball.velocityX = Math.sin(angle) * speed;
+        ball.velocityY = -Math.cos(angle) * speed;
+    }
+
+    rallyStartTime = performance.now() - rallyTime * 1000;
+    nextAiErrorUpdate = performance.now() + 1000;
+    nextAiFakeUpdate = performance.now() + 1200;
+}
+
 function launchBall() {
     const speed = getBaseBallSpeedAtTime(0);
     const angle = Math.random() * 0.55 - 0.275;
@@ -684,6 +755,11 @@ function resetPowerUps() {
     activePowerUps = [];
     activePowerUp = null;
     extraBalls = [];
+    multiBallActive = false;
+    multiBallLastExitSide = null;
+    magneticBallHeld = false;
+    lastTouchTapAt = 0;
+    ball.visible = false;
     setGameOrientation("vertical");
     powerUpSpawnAt = Infinity;
     powerUpSpawnCount = 1;
@@ -813,9 +889,12 @@ function activatePowerUp(type) {
             : debuffPowerUps[Math.floor(Math.random() * debuffPowerUps.length)];
     }
 
+    const isPersistentPowerUp = type === "magnetic-ball" || type === "multi-ball";
     const duration = type === "orientation-shift"
         ? 5000 + Math.random() * 5000
-        : powerUpDurations[type] || 6000;
+        : isPersistentPowerUp
+            ? Infinity
+            : powerUpDurations[type] || 6000;
 
     const effect = {
         type,
@@ -831,15 +910,36 @@ function activatePowerUp(type) {
         setGameOrientation("horizontal");
     }
 
+    if (type === "magnetic-ball") {
+        // Magnetic Ball is a special hold mechanic: the ball attaches to
+        // the player's paddle until the player deliberately launches it.
+        magneticBallHeld = true;
+        attachMagneticBallToPaddle();
+    }
+
     if (type === "multi-ball") {
-        extraBalls.push({
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            size: 11,
-            velocityX: -ball.velocityX * 0.82,
-            velocityY: -ball.velocityY * 0.82,
-            visible: true
-        });
+        // Multi-Ball is a true power-up: five balls are now in play.
+        // Losing one ball does NOT immediately give the AI a point.
+        multiBallActive = true;
+        multiBallLastExitSide = null;
+
+        extraBalls = [];
+        const baseSpeed = Math.max(2, getCurrentBallSpeed() * 0.82);
+        const baseAngle = Math.atan2(ball.velocityX, ball.velocityY || 1);
+
+        for (let i = 0; i < 4; i++) {
+            const angle = baseAngle + ((i - 1.5) * 0.34) + (Math.random() - 0.5) * 0.22;
+            const direction = i % 2 === 0 ? 1 : -1;
+
+            extraBalls.push({
+                x: ball.x,
+                y: ball.y,
+                size: 11,
+                velocityX: Math.sin(angle) * baseSpeed * direction,
+                velocityY: Math.cos(angle) * baseSpeed * direction,
+                visible: true
+            });
+        }
     }
 }
 
@@ -902,16 +1002,12 @@ function updatePowerUps() {
         const effect = activePowerUps[i];
         effect.remaining = Math.max(0, effect.duration - (now - effect.startedAt));
 
-        if (effect.remaining <= 0) {
+        if (effect.remaining <= 0 && Number.isFinite(effect.remaining)) {
             if (effect.type === "orientation-shift") {
                 const anotherOrientation = activePowerUps.some((other, index) =>
                     index !== i && other.type === "orientation-shift" && other.remaining > 0
                 );
                 if (!anotherOrientation) setGameOrientation("vertical");
-            }
-
-            if (effect.type === "multi-ball" && extraBalls.length) {
-                extraBalls.pop();
             }
 
             activePowerUps.splice(i, 1);
@@ -1010,9 +1106,18 @@ function updatePowerUpHud() {
 
     document.getElementById("powerUpName").textContent = [...new Set(label)].join(" • ");
     const shortest = visible[0];
-    document.getElementById("powerUpTime").textContent = (shortest.remaining / 1000).toFixed(1) + "s";
-    document.getElementById("powerUpBar").style.width =
-        (shortest.remaining / shortest.duration * 100) + "%";
+
+    if (magneticBallHeld && activePowerUps.some(effect => effect.type === "magnetic-ball")) {
+        document.getElementById("powerUpTime").textContent = "HOLD • RIGHT CLICK / DOUBLE TAP";
+        document.getElementById("powerUpBar").style.width = "100%";
+    } else if (multiBallActive && activePowerUps.some(effect => effect.type === "multi-ball")) {
+        document.getElementById("powerUpTime").textContent = "5 BALLS • LAST BALL DECIDES";
+        document.getElementById("powerUpBar").style.width = "100%";
+    } else if (Number.isFinite(shortest.remaining)) {
+        document.getElementById("powerUpTime").textContent = (shortest.remaining / 1000).toFixed(1) + "s";
+        document.getElementById("powerUpBar").style.width =
+            (shortest.remaining / shortest.duration * 100) + "%";
+    }
 }
 function beginMatch(introText) {
     hideEndScreen();
@@ -1072,6 +1177,9 @@ function resetBallAfterScore() {
     powerUpSpawnAt = Infinity;
     centerPaddles();
     extraBalls = [];
+    multiBallActive = false;
+    multiBallLastExitSide = null;
+    magneticBallHeld = false;
     ball.x = canvas.width / 2;
     ball.y = canvas.height / 2;
     ball.velocityX = 0;
@@ -1313,10 +1421,37 @@ function handleBallPaddleCollision(activeBall, isExtra = false) {
     }
 }
 
+function finishMultiBallRally(playerWon) {
+    if (!multiBallActive || transitionActive || gameOver) return;
+
+    multiBallActive = false;
+    multiBallLastExitSide = null;
+    extraBalls = [];
+
+    const effectIndex = activePowerUps.findIndex(effect => effect.type === "multi-ball");
+    if (effectIndex >= 0) activePowerUps.splice(effectIndex, 1);
+    activePowerUp = activePowerUps.length ? activePowerUps[activePowerUps.length - 1] : null;
+
+    scorePoint(playerWon);
+}
+
+function registerMultiBallExit(playerWon) {
+    if (!multiBallActive || transitionActive || gameOver) return;
+
+    // A ball leaving the arena is only removed from play.
+    // The point is decided only when the LAST ball is gone.
+    multiBallLastExitSide = playerWon ? "player" : "ai";
+
+    if (!ball.visible && extraBalls.length === 0) {
+        finishMultiBallRally(multiBallLastExitSide === "player");
+    }
+}
+
 function updateExtraBalls() {
-    if (!extraBalls.length || !ball.visible || gameOver || transitionActive || isPaused) return;
+    if (!extraBalls.length || gameOver || transitionActive || isPaused) return;
 
     const currentSpeed = getCurrentBallSpeed() * 0.82;
+
     for (const extra of extraBalls) {
         const magnitude = Math.hypot(extra.velocityX, extra.velocityY) || 1;
         extra.velocityX *= currentSpeed / magnitude;
@@ -1339,62 +1474,93 @@ function updateExtraBalls() {
 
     for (let i = extraBalls.length - 1; i >= 0; i--) {
         const extra = extraBalls[i];
+
         if (gameOrientation === "horizontal") {
             if (extra.x + extra.size / 2 < 0) {
                 extraBalls.splice(i, 1);
-                if (!transitionActive && !gameOver) scorePoint(false);
+                registerMultiBallExit(false);
             } else if (extra.x - extra.size / 2 > canvas.width) {
                 extraBalls.splice(i, 1);
-                if (!transitionActive && !gameOver) scorePoint(true);
+                registerMultiBallExit(true);
             }
         } else {
             if (extra.y - extra.size / 2 > canvas.height) {
                 extraBalls.splice(i, 1);
-                if (!transitionActive && !gameOver) scorePoint(false);
+                registerMultiBallExit(false);
             } else if (extra.y + extra.size / 2 < 0) {
                 extraBalls.splice(i, 1);
-                if (!transitionActive && !gameOver) scorePoint(true);
+                registerMultiBallExit(true);
             }
         }
     }
 }
 
 function updateBall() {
-    if (!gameStarted || gameOver || transitionActive || !ball.visible || isPaused) return;
+    if (!gameStarted || gameOver || transitionActive || isPaused) return;
 
     rallyTime = (performance.now() - rallyStartTime) / 1000;
-    const currentSpeed = getCurrentBallSpeed();
     applyPowerUpEffects();
-    const currentMagnitude = Math.hypot(ball.velocityX, ball.velocityY) || 1;
-    ball.velocityX *= currentSpeed / currentMagnitude;
-    ball.velocityY *= currentSpeed / currentMagnitude;
 
-    if (getPowerUpCount("magnetic-ball") > 0 && gameOrientation === "vertical" && ball.velocityX !== 0) {
-        const targetX = player.x + player.width / 2;
-        ball.velocityX += (targetX - ball.x) * (0.0018 * getPowerUpCount("magnetic-ball"));
+    if (magneticBallHeld) {
+        attachMagneticBallToPaddle();
+        updateExtraBalls();
+        return;
     }
 
-    ball.x += ball.velocityX;
-    ball.y += ball.velocityY;
+    if (ball.visible) {
+        const currentSpeed = getCurrentBallSpeed();
+        const currentMagnitude = Math.hypot(ball.velocityX, ball.velocityY) || 1;
+        ball.velocityX *= currentSpeed / currentMagnitude;
+        ball.velocityY *= currentSpeed / currentMagnitude;
 
-    if (gameOrientation === "horizontal") {
-        if (ball.y - ball.size / 2 <= 0 || ball.y + ball.size / 2 >= canvas.height) {
-            ball.velocityY = -ball.velocityY;
-            ball.y = Math.max(ball.size / 2, Math.min(canvas.height - ball.size / 2, ball.y));
+        ball.x += ball.velocityX;
+        ball.y += ball.velocityY;
+
+        if (gameOrientation === "horizontal") {
+            if (ball.y - ball.size / 2 <= 0 || ball.y + ball.size / 2 >= canvas.height) {
+                ball.velocityY = -ball.velocityY;
+                ball.y = Math.max(ball.size / 2, Math.min(canvas.height - ball.size / 2, ball.y));
+            }
+        } else if (ball.x - ball.size / 2 <= 0 || ball.x + ball.size / 2 >= canvas.width) {
+            ball.velocityX = -ball.velocityX;
+            ball.x = Math.max(ball.size / 2, Math.min(canvas.width - ball.size / 2, ball.x));
         }
-    } else if (ball.x - ball.size / 2 <= 0 || ball.x + ball.size / 2 >= canvas.width) {
-        ball.velocityX = -ball.velocityX;
-        ball.x = Math.max(ball.size / 2, Math.min(canvas.width - ball.size / 2, ball.x));
-    }
 
-    handleBallPaddleCollision(ball);
+        handleBallPaddleCollision(ball);
 
-    if (gameOrientation === "horizontal") {
-        if (ball.x + ball.size / 2 < 0) scorePoint(false);
-        if (ball.x - ball.size / 2 > canvas.width) scorePoint(true);
-    } else {
-        if (ball.y - ball.size / 2 > canvas.height) scorePoint(false);
-        if (ball.y + ball.size / 2 < 0) scorePoint(true);
+        if (gameOrientation === "horizontal") {
+            if (ball.x + ball.size / 2 < 0) {
+                if (multiBallActive) {
+                    ball.visible = false;
+                    registerMultiBallExit(false);
+                } else {
+                    scorePoint(false);
+                }
+            } else if (ball.x - ball.size / 2 > canvas.width) {
+                if (multiBallActive) {
+                    ball.visible = false;
+                    registerMultiBallExit(true);
+                } else {
+                    scorePoint(true);
+                }
+            }
+        } else {
+            if (ball.y - ball.size / 2 > canvas.height) {
+                if (multiBallActive) {
+                    ball.visible = false;
+                    registerMultiBallExit(false);
+                } else {
+                    scorePoint(false);
+                }
+            } else if (ball.y + ball.size / 2 < 0) {
+                if (multiBallActive) {
+                    ball.visible = false;
+                    registerMultiBallExit(true);
+                } else {
+                    scorePoint(true);
+                }
+            }
+        }
     }
 
     updateExtraBalls();
