@@ -194,11 +194,11 @@ function schedulePowerUpTest() {
     // Give the normal match intro time to finish, then test both mechanics.
     setTimeout(() => {
         if (!gameOver && gameStarted) runPowerUpTestSequence();
-    }, 3500);
+    }, 6000);
 
     setTimeout(() => {
         if (!gameOver && gameStarted) runPowerUpTestSequence();
-    }, 16000);
+    }, 18000);
 }
 
 function showScreen(screenToShow) {
