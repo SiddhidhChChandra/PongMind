@@ -167,16 +167,12 @@ let pendingDifficulty = currentDifficulty;
 // Enable with ?testPowerups=1 on the game URL.
 // This does not affect normal gameplay or normal power-up randomness.
 const powerUpTestMode = new URLSearchParams(window.location.search).get("testPowerups") === "1";
-let powerUpTestIndex = 0;
-const powerUpTestSequence = ["magnetic-ball", "multi-ball"];
 
-function runPowerUpTestSequence() {
+
+function runPowerUpTest(type) {
     if (!powerUpTestMode || !gameStarted || gameOver || transitionActive || isPaused) return;
 
-    const type = powerUpTestSequence[powerUpTestIndex % powerUpTestSequence.length];
-    powerUpTestIndex++;
-
-    // Clear any previous special test effect before starting the next one.
+    // Clear only the special test mechanics before starting a fresh test.
     magneticBallHeld = false;
     multiBallActive = false;
     extraBalls = [];
@@ -186,19 +182,6 @@ function runPowerUpTestSequence() {
     activePowerUp = activePowerUps.length ? activePowerUps[activePowerUps.length - 1] : null;
 
     activatePowerUp(type);
-}
-
-function schedulePowerUpTest() {
-    if (!powerUpTestMode) return;
-
-    // Give the normal match intro time to finish, then test both mechanics.
-    setTimeout(() => {
-        if (!gameOver && gameStarted) runPowerUpTestSequence();
-    }, 6000);
-
-    setTimeout(() => {
-        if (!gameOver && gameStarted) runPowerUpTestSequence();
-    }, 18000);
 }
 
 function showScreen(screenToShow) {
@@ -309,7 +292,14 @@ document.addEventListener("keydown", function(event) {
     if (!powerUpTestMode || !gameScreen || gameScreen.classList.contains("hidden")) return;
     if (event.key.toLowerCase() === "m") {
         event.preventDefault();
-        runPowerUpTestSequence();
+        if (!gameStarted || gameOver || transitionActive || isPaused) return;
+
+        // M starts the Magnetic Ball test. Press M again to launch it.
+        if (magneticBallHeld) {
+            launchMagneticBall();
+        } else {
+            runPowerUpTest("magnetic-ball");
+        }
     }
     if (event.key.toLowerCase() === "b") {
         event.preventDefault();
@@ -1218,7 +1208,6 @@ function beginMatch(introText) {
     updateScoreboard();
 
     showAnnouncement(introText, "#FFFFFF", "show-score");
-    schedulePowerUpTest();
 }
 
 function startConfiguredGame() {
