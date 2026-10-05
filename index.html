@@ -108,6 +108,45 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
 .info-tip{margin-top:18px;padding:12px 14px;background:#0c0e18;border-left:4px solid #ffcf5a;color:#c7d0e2;font-size:10px;line-height:1.5}
 .info-footer{margin-top:22px;text-align:center;color:#53688e;font-size:9px;letter-spacing:3px}
 @media(max-width:620px){.info-panel{padding:20px 15px}.info-grid{grid-template-columns:1fr}.info-card{padding:13px}.info-title{font-size:42px}}
+
+/* DAY 9 — ARCADE INTERACTION POLISH */
+.menu-btn,.difficulty-btn,.difficulty-choice,.match-points,.pause-button,.info-close,.end-btn,.touch-control{
+  position:relative;overflow:hidden;
+  transition:transform .16s cubic-bezier(.2,.8,.2,1),box-shadow .16s ease,border-color .16s ease,background .16s ease,color .16s ease,filter .16s ease;
+}
+.menu-btn:before,.difficulty-choice:before,.end-btn:before,.info-close:before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,.16) 50%,transparent 75%);
+  transform:translateX(-120%);transition:transform .45s ease;pointer-events:none;
+}
+.menu-btn:hover:before,.difficulty-choice:hover:before,.end-btn:hover:before,.info-close:hover:before{transform:translateX(120%)}
+.menu-btn:hover,.difficulty-btn:hover,.difficulty-choice:hover,.end-btn:hover,.info-close:hover{
+  filter:brightness(1.12);box-shadow:0 0 18px rgba(85,231,255,.16);
+}
+.menu-btn:active,.difficulty-btn:active,.difficulty-choice:active,.match-points:active,.pause-button:active,.info-close:active,.end-btn:active{
+  transform:translate(3px,3px) scale(.985)!important;
+  box-shadow:1px 1px 0 #03040a!important;
+}
+.menu-btn.primary{animation:buttonBreathe 2.8s ease-in-out infinite}
+@keyframes buttonBreathe{0%,100%{filter:brightness(1)}50%{filter:brightness(1.08)}}
+.info-screen .info-panel{animation:infoPanelIn .42s cubic-bezier(.16,1,.3,1) both}
+@keyframes infoPanelIn{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.info-screen .info-card{animation:infoCardIn .4s ease both}
+.info-screen .info-card:nth-child(2){animation-delay:.03s}.info-screen .info-card:nth-child(3){animation-delay:.06s}
+.info-screen .info-card:nth-child(4){animation-delay:.09s}.info-screen .info-card:nth-child(5){animation-delay:.12s}
+@keyframes infoCardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.power-up-hud.powerup-pop{animation:powerHudPop .55s cubic-bezier(.16,1,.3,1)}
+@keyframes powerHudPop{0%{transform:translateY(8px) scale(.96);filter:brightness(1)}45%{transform:translateY(0) scale(1.03);filter:brightness(1.5)}100%{transform:translateY(0) scale(1);filter:brightness(1)}}
+.end-screen.open .end-title{animation:endTitleIn .7s cubic-bezier(.16,1,.3,1) both}
+.end-screen.open .end-box{animation:endBoxIn .55s .14s cubic-bezier(.16,1,.3,1) both}
+.end-screen.open .end-btn{animation:endButtonIn .4s .25s ease both}
+@keyframes endTitleIn{from{opacity:0;transform:translateY(-25px) scale(.86);filter:blur(5px)}60%{opacity:1;transform:translateY(0) scale(1.04);filter:blur(0)}to{transform:scale(1)}}
+@keyframes endBoxIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes endButtonIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}
+}
+
 </style>
 </head>
 <body>
