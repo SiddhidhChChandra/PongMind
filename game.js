@@ -5,7 +5,6 @@ const homeScreen = document.getElementById("homeScreen");
 const menuScreen = document.getElementById("menuScreen");
 const difficultyScreen = document.getElementById("difficultyScreen");
 const infoScreen = document.getElementById("infoScreen");
-const homeInfoButton = document.getElementById("homeInfoButton");
 const menuInfoButton = document.getElementById("menuInfoButton");
 const infoCloseButton = document.getElementById("infoCloseButton");
 const infoBackButton = document.getElementById("infoBackButton");
@@ -215,11 +214,6 @@ function openInfoPage() {
 function closeInfoPage(returnScreen = menuScreen) {
     showScreen(returnScreen);
 }
-
-homeInfoButton.addEventListener("click", function(event) {
-    event.stopPropagation();
-    openInfoPage();
-});
 
 menuInfoButton.addEventListener("click", function(event) {
     event.stopPropagation();
