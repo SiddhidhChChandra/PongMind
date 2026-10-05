@@ -89,11 +89,30 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
 .end-screen{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;overflow:hidden;background:#05060b;color:#fff}.end-screen.open{display:flex;animation:endIn .45s ease forwards}.end-screen:before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(85,231,255,.07),transparent 35%,rgba(255,43,214,.08)),repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 4px)}.end-screen:after{content:"";position:absolute;inset:-20%;background:linear-gradient(115deg,transparent 44%,rgba(255,255,255,.045) 45%,transparent 46%);transform:skewY(-7deg)}
 @keyframes endIn{from{opacity:0;transform:scale(1.03)}to{opacity:1;transform:scale(1)}}
 .end-content{position:relative;z-index:2;width:min(760px,92vw);text-align:center}.end-stamp{font-size:10px;letter-spacing:6px;color:#53688e;margin-bottom:18px}.end-title{margin:0;font-family:Impact,"Arial Black",sans-serif;font-size:clamp(80px,18vw,170px);line-height:.82;letter-spacing:5px;text-transform:uppercase;text-shadow:6px 6px 0 #171a2c}.end-title.win{color:#55e7ff}.end-title.loss{color:#ff2bd6}.end-box{width:min(520px,90vw);margin:28px auto 0;padding:24px;background:rgba(13,16,32,.94);border:1px solid #53688e;box-shadow:10px 10px 0 #020309,0 0 40px rgba(85,231,255,.08);text-align:left}.end-result{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #33415f;padding-bottom:15px;margin-bottom:15px}.end-result span:first-child{color:#8fa3c7;font-size:11px;letter-spacing:3px}.end-score{font-family:Impact,"Arial Black",sans-serif;font-size:26px}.end-message{color:#8fa3c7;font-size:10px;letter-spacing:2px;margin:0 0 16px}.end-actions{display:grid;gap:8px}.end-btn{min-height:48px;border:1px solid #33415f;background:#111321;color:#dce7ff;cursor:pointer;font-family:"Trebuchet MS",Arial,sans-serif;font-weight:900;font-size:11px;letter-spacing:3px}.end-btn:hover{border-color:#55e7ff;color:#fff;background:#171a2c}.end-btn.primary{border-color:#55e7ff;color:#55e7ff}.end-btn.danger{border-color:#ff2bd6;color:#ff2bd6}
+
+/* INFO / GAME GUIDE */
+.info-screen{background:#080a12;padding:18px;overflow:auto;align-items:flex-start}
+.info-panel{position:relative;width:min(760px,94vw);margin:10px auto;padding:26px 22px 22px;background:#111321;border:4px solid #55e7ff;box-shadow:9px 9px 0 #03040a,0 0 35px rgba(255,43,214,.12)}
+.info-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.info-title{margin:0;font-family:Impact,"Arial Black",sans-serif;font-size:clamp(40px,8vw,68px);letter-spacing:3px;color:#f4f7ff;text-shadow:3px 3px 0 #ff2bd6}
+.info-close{width:44px;height:44px;border:3px solid #55e7ff;background:#171a2c;color:#fff;font-family:Impact,"Arial Black",sans-serif;font-size:22px;cursor:pointer}
+.info-intro{margin:0 0 22px;color:#8fa3c7;font-size:11px;letter-spacing:2px;text-transform:uppercase}
+.info-section-title{margin:25px 0 10px;padding-bottom:7px;border-bottom:2px solid #33415f;color:#7df9ff;font-family:Impact,"Arial Black",sans-serif;font-size:25px;letter-spacing:2px}
+.info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.info-card{padding:15px;background:#171a2c;border:2px solid #33415f;box-shadow:4px 4px 0 #03040a}
+.info-card.special{border-color:#9b2cff}.info-card.buff{border-color:#55e7ff}.info-card.debuff{border-color:#ff496e}
+.info-card h4{margin:0 0 7px;color:#fff;font-family:Impact,"Arial Black",sans-serif;font-size:19px;letter-spacing:1px}
+.info-card p{margin:0;color:#9aa9c4;font-size:11px;line-height:1.5}
+.info-tag{display:inline-block;margin-bottom:8px;padding:3px 6px;border:1px solid #53688e;color:#8fa3c7;font-size:8px;font-weight:900;letter-spacing:2px}
+.info-tag.buff{color:#55e7ff;border-color:#55e7ff}.info-tag.debuff{color:#ff496e;border-color:#ff496e}.info-tag.special{color:#c38cff;border-color:#9b2cff}
+.info-tip{margin-top:18px;padding:12px 14px;background:#0c0e18;border-left:4px solid #ffcf5a;color:#c7d0e2;font-size:10px;line-height:1.5}
+.info-footer{margin-top:22px;text-align:center;color:#53688e;font-size:9px;letter-spacing:3px}
+@media(max-width:620px){.info-panel{padding:20px 15px}.info-grid{grid-template-columns:1fr}.info-card{padding:13px}.info-title{font-size:42px}}
 </style>
 </head>
 <body>
 <section class="screen home-screen" id="homeScreen">
-<div class="home-content"><p class="home-kicker">INSERT COIN • ARCADE SYSTEM</p><h1 class="logo">PONGMIND</h1><p class="start-anywhere">CLICK ANYWHERE TO START</p></div>
+<div class="home-content"><p class="home-kicker">INSERT COIN • ARCADE SYSTEM</p><h1 class="logo">PONGMIND</h1><button class="menu-btn primary home-info-button" id="homeInfoButton">HOW TO PLAY / INFO</button><p class="start-anywhere">CLICK ANYWHERE TO START</p></div>
 <div class="home-corner">PLAYER ONE • READY</div>
 </section>
 
@@ -103,7 +122,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
 <div class="menu-actions">
 <button class="menu-btn primary" id="startGameButton">START GAME</button>
 <button class="menu-btn" id="difficultyButton">CHOOSE DIFFICULTY</button>
-<button class="menu-btn" id="endlessButton">ENDLESS RUN</button>
+<button class="menu-btn" id="endlessButton">ENDLESS RUN</button><button class="menu-btn" id="menuInfoButton">HOW TO PLAY / POWER-UPS</button>
 </div>
 <div class="menu-section" style="margin-top:22px">
 <label class="menu-label" for="matchPoints">MATCH POINTS</label>
@@ -113,6 +132,56 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
 <button class="menu-btn back" id="backHomeButton">BACK</button>
 <p class="menu-note">ENDLESS RUN • 10 MINUTES • HIGH SCORE TAKES THE ROUND</p>
 </div>
+</section>
+
+
+<section class="screen hidden info-screen" id="infoScreen">
+  <div class="info-panel">
+    <div class="info-header"><h2 class="info-title">GAME GUIDE</h2><button class="info-close" id="infoCloseButton" aria-label="Close game guide">×</button></div>
+    <p class="info-intro">Everything you need to know before you challenge the machine.</p>
+
+    <h3 class="info-section-title">🎮 HOW TO PLAY</h3>
+    <div class="info-card">
+      <span class="info-tag">OBJECTIVE</span>
+      <h4>Return the ball. Beat the AI.</h4>
+      <p>Move your paddle to return the ball. Score points when the ball gets past the opponent. Match points can be set before starting.</p>
+    </div>
+    <div class="info-grid">
+      <div class="info-card"><span class="info-tag">DESKTOP</span><h4>A / D • ← / →</h4><p>Move left and right. W / S and ↑ / ↓ are also available for orientation-shift controls.</p></div>
+      <div class="info-card"><span class="info-tag">MOBILE</span><h4>TOUCH BUTTONS</h4><p>Use the on-screen controls. During Orientation Shift, the buttons change to ▲ / ▼.</p></div>
+      <div class="info-card"><span class="info-tag">PAUSE</span><h4>ESC • Ⅱ</h4><p>Pause the match, resume, restart, or exit safely.</p></div>
+      <div class="info-card"><span class="info-tag">FULLSCREEN</span><h4>⛶</h4><p>Use the fullscreen button during a match when your browser supports fullscreen mode.</p></div>
+    </div>
+
+    <h3 class="info-section-title">⚡ POWER-UPS</h3>
+    <div class="info-grid">
+      <div class="info-card buff"><span class="info-tag buff">BUFF</span><h4>🔵 BIG PADDLE</h4><p>Makes your paddle larger, giving you more room to intercept the ball.</p></div>
+      <div class="info-card debuff"><span class="info-tag debuff">DEBUFF</span><h4>🔴 SMALL PADDLE</h4><p>Makes your paddle smaller, making accurate returns harder.</p></div>
+      <div class="info-card buff"><span class="info-tag buff">BUFF</span><h4>⚡ SPEED BOOST</h4><p>Increases your paddle movement speed.</p></div>
+      <div class="info-card buff"><span class="info-tag buff">BUFF</span><h4>🐌 SLOW BALL</h4><p>Temporarily reduces the ball's speed.</p></div>
+      <div class="info-card special"><span class="info-tag special">SPECIAL</span><h4>🧲 MAGNETIC BALL</h4><p>Your paddle can catch the ball and hold it. Right-click or double-tap to launch. With Multi-Ball, multiple balls can be held and launched together with varied trajectories.</p></div>
+      <div class="info-card special"><span class="info-tag special">SPECIAL</span><h4>🟣 MULTI-BALL</h4><p>Creates 5 balls. <strong>ONE MISS = POINT.</strong> If even one ball gets past a paddle, the opponent immediately scores. The AI also scales its ability as more balls are active.</p></div>
+      <div class="info-card buff"><span class="info-tag buff">BUFF</span><h4>🟢 BIG BALL</h4><p>Makes the ball larger and easier to hit.</p></div>
+      <div class="info-card debuff"><span class="info-tag debuff">DEBUFF</span><h4>🔴 SMALL BALL</h4><p>Makes the ball smaller and harder to hit.</p></div>
+      <div class="info-card debuff"><span class="info-tag debuff">DEBUFF</span><h4>🔄 REVERSE CONTROLS</h4><p>Temporarily reverses your movement controls.</p></div>
+      <div class="info-card debuff"><span class="info-tag debuff">DEBUFF</span><h4>💥 SCREEN SHAKE</h4><p>Adds visual screen shake while the effect is active.</p></div>
+      <div class="info-card debuff"><span class="info-tag debuff">DEBUFF</span><h4>🔥 BALL SPEED UP</h4><p>Temporarily makes the ball faster.</p></div>
+      <div class="info-card special"><span class="info-tag special">SPECIAL</span><h4>↔ ORIENTATION SHIFT</h4><p>Changes the arena from vertical Pong to horizontal Pong. Your movement direction and controls adapt automatically.</p></div>
+      <div class="info-card special"><span class="info-tag special">MYSTERY</span><h4>❓ MYSTERY</h4><p>A mystery pickup gives you a random effect. You do not know what you will get until it activates.</p></div>
+    </div>
+
+    <h3 class="info-section-title">🧠 THE MACHINE</h3>
+    <div class="info-grid">
+      <div class="info-card"><span class="info-tag">EASY</span><h4>LEARN THE RHYTHM</h4><p>More forgiving movement and larger prediction error.</p></div>
+      <div class="info-card"><span class="info-tag">NORMAL</span><h4>THE BALANCED FIGHT</h4><p>A steady opponent with predictive movement and controlled unpredictability.</p></div>
+      <div class="info-card"><span class="info-tag">HARD</span><h4>LESS ROOM FOR ERROR</h4><p>Fast reactions, stronger prediction, and tighter returns.</p></div>
+      <div class="info-card"><span class="info-tag">EXTREME</span><h4>NO MERCY</h4><p>Highly capable predictive AI that can adapt under pressure and during Multi-Ball without becoming mathematically perfect.</p></div>
+    </div>
+
+    <div class="info-tip"><strong>TIP:</strong> Power-ups can stack. Some effects help you, some hurt you, and some completely change how the arena behaves. Learn to recognize them quickly.</div>
+    <p class="info-footer">PONGMIND • LEARN THE MACHINE • BEAT THE MACHINE</p>
+    <button class="menu-btn back" id="infoBackButton">BACK</button>
+  </div>
 </section>
 
 <section class="screen hidden difficulty-screen" id="difficultyScreen">
