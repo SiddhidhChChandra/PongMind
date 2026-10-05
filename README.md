@@ -167,6 +167,17 @@ No game engine or framework is used.
 - Dynamic spawn scaling
 
 
+### Day 7
+- Multi-Ball gameplay redesign
+- One-miss scoring rule
+- Multi-Ball-aware AI
+- Increasing AI capability with ball count
+- Multi-ball threat prioritization
+- Multi-Ball + Magnetic Ball combination
+- Multiple-ball magnetic capture
+- Multi-ball launch system
+- Final cleanup and removal of development test mode
+
 ### Day 9 — UI/UX & Visual Polish
 - Responsive desktop and mobile layout polish
 - Fullscreen gameplay control
@@ -180,17 +191,6 @@ No game engine or framework is used.
 - Polished WIN / LOSE end-screen entrance animations
 - Mobile touch interaction feedback
 - Reduced-motion accessibility support
-
-### Day 7
-- Multi-Ball gameplay redesign
-- One-miss scoring rule
-- Multi-Ball-aware AI
-- Increasing AI capability with ball count
-- Multi-ball threat prioritization
-- Multi-Ball + Magnetic Ball combination
-- Multiple-ball magnetic capture
-- Multi-ball launch system
-- Final cleanup and removal of development test mode
 
 ## Future Direction
 
