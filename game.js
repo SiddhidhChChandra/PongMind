@@ -19,6 +19,7 @@ const saveLaterButton = document.getElementById("saveLaterButton");
 const backHomeButton = document.getElementById("backHomeButton");
 const backMenuButton = document.getElementById("backMenuButton");
 const pauseButton = document.getElementById("pauseButton");
+const fullscreenButton = document.getElementById("fullscreenButton");
 const pauseOverlay = document.getElementById("pauseOverlay");
 const resumeButton = document.getElementById("resumeButton");
 const restartButton = document.getElementById("restartButton");
@@ -1857,6 +1858,30 @@ function exitMatch() {
     confirmModal.classList.remove("open");
     showScreen(menuScreen);
     updateSavedDifficultyUI();
+}
+
+function updateFullscreenButton() {
+    if (!fullscreenButton) return;
+    fullscreenButton.setAttribute("aria-label", document.fullscreenElement ? "Exit fullscreen" : "Enter fullscreen");
+}
+
+async function toggleFullscreen() {
+    try {
+        if (document.fullscreenElement) {
+            await document.exitFullscreen();
+        } else {
+            const target = document.querySelector(".game-screen");
+            if (target && target.requestFullscreen) await target.requestFullscreen();
+        }
+    } catch (error) {
+        // Fullscreen is optional; gameplay remains usable without it.
+    }
+}
+
+if (fullscreenButton) {
+    fullscreenButton.addEventListener("click", toggleFullscreen);
+    document.addEventListener("fullscreenchange", updateFullscreenButton);
+    updateFullscreenButton();
 }
 
 pauseButton.addEventListener("click", togglePause);
