@@ -1091,6 +1091,13 @@ function activatePowerUp(type) {
     activePowerUps.push(effect);
     activePowerUp = effect;
 
+    const powerHud = document.getElementById("powerUpHud");
+    if (powerHud) {
+        powerHud.classList.remove("powerup-pop");
+        void powerHud.offsetWidth;
+        powerHud.classList.add("powerup-pop");
+    }
+
     if (type === "orientation-shift") {
         setGameOrientation("horizontal");
     }
@@ -1231,8 +1238,10 @@ function drawPowerUp() {
 
         ctx.save();
         ctx.translate(pickup.x, pickup.y);
+        const pulse = 1 + Math.sin(pickup.phase * 2.2) * 0.10;
+        ctx.scale(pulse, pulse);
         ctx.shadowColor = color;
-        ctx.shadowBlur = 22;
+        ctx.shadowBlur = 22 + Math.sin(pickup.phase * 2) * 7;
         ctx.lineWidth = 3;
         ctx.strokeStyle = color;
         ctx.fillStyle = color;
@@ -1959,6 +1968,19 @@ endDifficultyButton.addEventListener("click", function() {
     ball.visible = false;
     showScreen(difficultyScreen);
     openDifficultyPage();
+});
+
+
+document.addEventListener("pointerdown", function(event) {
+    const button = event.target.closest("button");
+    if (!button) return;
+    button.classList.add("pressed");
+});
+document.addEventListener("pointerup", function() {
+    document.querySelectorAll("button.pressed").forEach(button => button.classList.remove("pressed"));
+});
+document.addEventListener("pointercancel", function() {
+    document.querySelectorAll("button.pressed").forEach(button => button.classList.remove("pressed"));
 });
 
 function gameLoop() {
