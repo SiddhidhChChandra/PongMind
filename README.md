@@ -166,7 +166,6 @@ No game engine or framework is used.
 - Power-up HUD
 - Dynamic spawn scaling
 
-
 ### Day 7
 - Multi-Ball gameplay redesign
 - One-miss scoring rule
@@ -177,6 +176,16 @@ No game engine or framework is used.
 - Multiple-ball magnetic capture
 - Multi-ball launch system
 - Final cleanup and removal of development test mode
+
+### Day 8 — Testing & Bug Hunt
+- Full gameplay testing across match modes and difficulties
+- Power-up interaction testing
+- Multi-Ball one-miss scoring verification
+- Magnetic + Multi-Ball interaction testing
+- Pause, restart, and end-screen flow testing
+- Mobile control testing
+- Edge-case and regression checks
+- No reproducible gameplay bugs found during the test pass
 
 ### Day 9 — UI/UX & Visual Polish
 - Responsive desktop and mobile layout polish
