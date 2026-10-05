@@ -4,6 +4,11 @@ const ctx = canvas.getContext("2d");
 const homeScreen = document.getElementById("homeScreen");
 const menuScreen = document.getElementById("menuScreen");
 const difficultyScreen = document.getElementById("difficultyScreen");
+const infoScreen = document.getElementById("infoScreen");
+const homeInfoButton = document.getElementById("homeInfoButton");
+const menuInfoButton = document.getElementById("menuInfoButton");
+const infoCloseButton = document.getElementById("infoCloseButton");
+const infoBackButton = document.getElementById("infoBackButton");
 const gameScreen = document.getElementById("gameScreen");
 const startGameButton = document.getElementById("startGameButton");
 const difficultyButton = document.getElementById("difficultyButton");
@@ -166,7 +171,7 @@ let isPaused = false;
 let pendingDifficulty = currentDifficulty;
 
 function showScreen(screenToShow) {
-    [homeScreen, menuScreen, difficultyScreen, gameScreen].forEach(screen => {
+    [homeScreen, menuScreen, difficultyScreen, infoScreen, gameScreen].forEach(screen => {
         screen.classList.toggle("hidden", screen !== screenToShow);
     });
 }
@@ -202,6 +207,32 @@ function applyDifficulty(difficulty) {
     localStorage.setItem("pongmindDifficulty", difficulty);
     updateSavedDifficultyUI();
 }
+
+function openInfoPage() {
+    showScreen(infoScreen);
+}
+
+function closeInfoPage(returnScreen = menuScreen) {
+    showScreen(returnScreen);
+}
+
+homeInfoButton.addEventListener("click", function(event) {
+    event.stopPropagation();
+    openInfoPage();
+});
+
+menuInfoButton.addEventListener("click", function(event) {
+    event.stopPropagation();
+    openInfoPage();
+});
+
+infoCloseButton.addEventListener("click", function() {
+    closeInfoPage(menuScreen);
+});
+
+infoBackButton.addEventListener("click", function() {
+    closeInfoPage(menuScreen);
+});
 
 homeScreen.addEventListener("click", function() {
     showScreen(menuScreen);
