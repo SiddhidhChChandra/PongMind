@@ -166,6 +166,21 @@ No game engine or framework is used.
 - Power-up HUD
 - Dynamic spawn scaling
 
+
+### Day 9 — UI/UX & Visual Polish
+- Responsive desktop and mobile layout polish
+- Fullscreen gameplay control
+- Dedicated Game Guide / INFO screen
+- Complete power-up reference and AI difficulty guide
+- Smoother menu and button hover/press interactions
+- Arcade-style button sweep/highlight animations
+- Animated Game Guide entrance
+- Animated power-up pickup glow and HUD activation feedback
+- Improved screen/menu transition feel
+- Polished WIN / LOSE end-screen entrance animations
+- Mobile touch interaction feedback
+- Reduced-motion accessibility support
+
 ### Day 7
 - Multi-Ball gameplay redesign
 - One-miss scoring rule
