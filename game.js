@@ -175,8 +175,40 @@ function showScreen(screenToShow) {
     });
 }
 
-const CAREER_STATS_KEY = "pongmindCareerStats";
+const PLAYER_PROFILES_KEY = "pongmindProfiles";
+const ACTIVE_PLAYER_KEY = "pongmindActivePlayerId";
+const LEGACY_STATS_KEY = "pongmindCareerStats";
 let matchStatsSaved = false;
+let activePlayerId = safeStorageGet(ACTIVE_PLAYER_KEY) || "";
+let pendingPlayerAction = "normal";
+
+const playerModal = document.getElementById("playerModal");
+const playerModalClose = document.getElementById("playerModalClose");
+const playerCancelButton = document.getElementById("playerCancelButton");
+const playerNameForm = document.getElementById("playerNameForm");
+const playerNameInput = document.getElementById("playerNameInput");
+const playerContinueButton = document.getElementById("playerContinueButton");
+const playerFeedback = document.getElementById("playerFeedback");
+const playerModalIntro = document.getElementById("playerModalIntro");
+const savedPlayersList = document.getElementById("savedPlayersList");
+const switchPlayerButton = document.getElementById("switchPlayerButton");
+
+function safeStorageGet(key) {
+    try {
+        return localStorage.getItem(key);
+    } catch (error) {
+        return null;
+    }
+}
+
+function safeStorageSet(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
 
 function emptyCareerStats() {
     return {
@@ -191,46 +223,201 @@ function emptyCareerStats() {
     };
 }
 
-function readCareerStats() {
-    const fallback = emptyCareerStats();
+function normalizeCareerStats(source) {
+    const stats = emptyCareerStats();
+    if (!source || typeof source !== "object" || Array.isArray(source)) return stats;
 
-    try {
-        const saved = JSON.parse(localStorage.getItem(CAREER_STATS_KEY) || "null");
-        if (!saved || typeof saved !== "object" || Array.isArray(saved)) return fallback;
+    Object.keys(stats).forEach(key => {
+        const value = Number(source[key]);
+        stats[key] = Number.isFinite(value) && value >= 0 ? value : 0;
+    });
 
-        Object.keys(fallback).forEach(key => {
-            const value = Number(saved[key]);
-            fallback[key] = Number.isFinite(value) && value >= 0 ? value : 0;
-        });
-
-        fallback.matchesPlayed = Math.floor(fallback.matchesPlayed);
-        fallback.wins = Math.floor(fallback.wins);
-        fallback.losses = Math.floor(fallback.losses);
-        fallback.draws = Math.floor(fallback.draws);
-        fallback.playerPoints = Math.floor(fallback.playerPoints);
-        fallback.aiPoints = Math.floor(fallback.aiPoints);
-        fallback.totalRallies = Math.floor(fallback.totalRallies);
-        return fallback;
-    } catch (error) {
-        return fallback;
-    }
+    ["matchesPlayed", "wins", "losses", "draws", "playerPoints", "aiPoints", "totalRallies"]
+        .forEach(key => { stats[key] = Math.floor(stats[key]); });
+    return stats;
 }
 
-function writeCareerStats(stats) {
+function normalizePlayerProfile(source) {
+    if (!source || typeof source !== "object" || Array.isArray(source)) return null;
+    const id = typeof source.id === "string" ? source.id : "";
+    const name = typeof source.name === "string" ? source.name.trim().replace(/\\s+/g, " ").slice(0, 20) : "";
+    if (!id || !name) return null;
+
+    const recentMatches = Array.isArray(source.recentMatches)
+        ? source.recentMatches.slice(0, 5).filter(match => match && typeof match === "object").map(match => ({
+            date: typeof match.date === "string" ? match.date : "",
+            mode: typeof match.mode === "string" ? match.mode : "MATCH",
+            difficulty: typeof match.difficulty === "string" ? match.difficulty : "NORMAL",
+            result: ["WIN", "LOSS", "DRAW"].includes(match.result) ? match.result : "DRAW",
+            playerScore: Math.max(0, Math.floor(Number(match.playerScore) || 0)),
+            aiScore: Math.max(0, Math.floor(Number(match.aiScore) || 0)),
+            rallies: Math.max(0, Math.floor(Number(match.rallies) || 0))
+        }))
+        : [];
+
+    return {
+        id,
+        name,
+        createdAt: typeof source.createdAt === "string" ? source.createdAt : new Date().toISOString(),
+        stats: normalizeCareerStats(source.stats),
+        recentMatches
+    };
+}
+
+function readPlayerProfiles() {
+    let parsed = null;
     try {
-        localStorage.setItem(CAREER_STATS_KEY, JSON.stringify(stats));
-        return true;
+        parsed = JSON.parse(localStorage.getItem(PLAYER_PROFILES_KEY) || "null");
     } catch (error) {
-        return false;
+        parsed = null;
+    }
+
+    if (Array.isArray(parsed)) {
+        return parsed.map(normalizePlayerProfile).filter(Boolean);
+    }
+
+    // Preserve any career stats saved by the earlier single-player version.
+    let legacy = null;
+    try {
+        legacy = JSON.parse(localStorage.getItem(LEGACY_STATS_KEY) || "null");
+    } catch (error) {
+        legacy = null;
+    }
+
+    const legacyStats = normalizeCareerStats(legacy);
+    if (legacyStats.matchesPlayed > 0) {
+        const migrated = [{
+            id: "legacy-player",
+            name: "Legacy Player",
+            createdAt: new Date().toISOString(),
+            stats: legacyStats,
+            recentMatches: []
+        }];
+        safeStorageSet(PLAYER_PROFILES_KEY, JSON.stringify(migrated));
+        return migrated;
+    }
+
+    return [];
+}
+
+function writePlayerProfiles(profiles) {
+    return safeStorageSet(PLAYER_PROFILES_KEY, JSON.stringify(profiles));
+}
+
+function getActivePlayer() {
+    if (!activePlayerId) return null;
+    return readPlayerProfiles().find(profile => profile.id === activePlayerId) || null;
+}
+
+function setActivePlayer(profile) {
+    activePlayerId = profile.id;
+    safeStorageSet(ACTIVE_PLAYER_KEY, activePlayerId);
+    renderCareerStats();
+    updateSavedDifficultyUI();
+}
+
+function findPlayerByName(name, profiles = readPlayerProfiles()) {
+    const normalized = name.trim().replace(/\\s+/g, " ").toLocaleLowerCase();
+    return profiles.find(profile => profile.name.toLocaleLowerCase() === normalized) || null;
+}
+
+function createPlayerProfile(name) {
+    const cleanName = name.trim().replace(/\\s+/g, " ");
+    if (!cleanName) return { error: "Enter a player name to continue." };
+    if (cleanName.length > 20) return { error: "Player names must be 20 characters or fewer." };
+
+    const profiles = readPlayerProfiles();
+    const existing = findPlayerByName(cleanName, profiles);
+    if (existing) return { profile: existing, created: false };
+
+    const profile = {
+        id: "player-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
+        name: cleanName,
+        createdAt: new Date().toISOString(),
+        stats: emptyCareerStats(),
+        recentMatches: []
+    };
+    profiles.push(profile);
+
+    if (!writePlayerProfiles(profiles)) {
+        return { error: "This browser couldn't save the profile. Check storage settings and try again." };
+    }
+    return { profile, created: true };
+}
+
+function renderSavedPlayers() {
+    const profiles = readPlayerProfiles();
+    savedPlayersList.replaceChildren();
+
+    if (!profiles.length) {
+        const empty = document.createElement("p");
+        empty.className = "career-empty";
+        empty.textContent = "No saved players yet. Enter a name below to create the first profile.";
+        savedPlayersList.appendChild(empty);
+        return;
+    }
+
+    profiles.sort((a, b) => a.name.localeCompare(b.name)).forEach(profile => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "saved-player-button" + (profile.id === activePlayerId ? " current" : "");
+        button.dataset.playerId = profile.id;
+
+        const name = document.createElement("span");
+        name.className = "saved-player-name";
+        name.textContent = profile.name;
+
+        const meta = document.createElement("span");
+        meta.className = "saved-player-meta";
+        meta.textContent = profile.stats.matchesPlayed + " MATCHES · " + profile.stats.wins + " WINS";
+
+        button.append(name, meta);
+        savedPlayersList.appendChild(button);
+    });
+}
+
+function openPlayerModal(action = "normal") {
+    pendingPlayerAction = action;
+    playerFeedback.textContent = "";
+    playerNameInput.value = "";
+    playerModalIntro.textContent = action === "switch"
+        ? "Choose a different saved player or create a new profile."
+        : "Choose a saved player to continue, or enter a name to create a profile. Existing names log in to that browser profile.";
+    playerContinueButton.textContent = action === "switch"
+        ? "CREATE PROFILE / SWITCH"
+        : "CREATE PROFILE / LOG IN & PLAY";
+    playerModal.classList.add("open");
+    renderSavedPlayers();
+    playerNameInput.focus();
+}
+
+function closePlayerModal() {
+    playerModal.classList.remove("open");
+    playerFeedback.textContent = "";
+}
+
+function continueWithPlayer(profile) {
+    setActivePlayer(profile);
+    closePlayerModal();
+
+    if (pendingPlayerAction === "normal") {
+        startConfiguredGame();
+    } else if (pendingPlayerAction === "endless") {
+        startEndlessMode();
+    } else {
+        renderCareerStats();
     }
 }
 
 function renderCareerStats() {
-    const stats = readCareerStats();
+    const profile = getActivePlayer();
+    const stats = profile ? profile.stats : emptyCareerStats();
     const winRate = stats.matchesPlayed
         ? Math.round((stats.wins / stats.matchesPlayed) * 100)
         : 0;
 
+    document.getElementById("careerPlayerName").textContent =
+        profile ? "PLAYER: " + profile.name.toUpperCase() : "NO PLAYER SELECTED";
     document.getElementById("careerMatches").textContent = stats.matchesPlayed;
     document.getElementById("careerRecord").textContent =
         stats.wins + " / " + stats.losses + " / " + stats.draws;
@@ -238,15 +425,56 @@ function renderCareerStats() {
     document.getElementById("careerPoints").textContent =
         stats.playerPoints + " : " + stats.aiPoints;
     document.getElementById("careerRallies").textContent = stats.totalRallies;
-    document.getElementById("careerLongest").textContent =
-        Math.round(stats.longestRally) + "s";
+    document.getElementById("careerLongest").textContent = Math.round(stats.longestRally) + "s";
+
+    const recentList = document.getElementById("careerRecentMatches");
+    recentList.replaceChildren();
+    const recentMatches = profile ? profile.recentMatches : [];
+    if (!recentMatches.length) {
+        const empty = document.createElement("p");
+        empty.className = "career-empty";
+        empty.textContent = profile
+            ? "No completed matches yet. Your results will appear here."
+            : "Choose or create a player to view their personal stats.";
+        recentList.appendChild(empty);
+        return;
+    }
+
+    recentMatches.forEach(match => {
+        const row = document.createElement("div");
+        row.className = "career-recent-row " + match.result.toLowerCase();
+
+        const detail = document.createElement("span");
+        detail.className = "career-recent-detail";
+        let dateLabel = "RECENT";
+        if (match.date) {
+            const parsedDate = new Date(match.date);
+            if (!Number.isNaN(parsedDate.getTime())) {
+                dateLabel = parsedDate.toLocaleDateString(undefined, { month: "short", day: "numeric" }).toUpperCase();
+            }
+        }
+        detail.textContent = dateLabel + " · " + match.mode + " · " + match.difficulty + " · " + match.result;
+
+        const score = document.createElement("strong");
+        score.className = "career-recent-score";
+        score.textContent = match.playerScore + " : " + match.aiScore;
+
+        row.append(detail, score);
+        recentList.appendChild(row);
+    });
 }
 
 function saveCompletedMatch(isDraw = false) {
     if (matchStatsSaved) return;
+    const profile = getActivePlayer();
+    if (!profile) return;
     matchStatsSaved = true;
 
-    const stats = readCareerStats();
+    const profiles = readPlayerProfiles();
+    const target = profiles.find(item => item.id === profile.id);
+    if (!target) return;
+
+    const stats = target.stats;
     stats.matchesPlayed += 1;
     if (isDraw) stats.draws += 1;
     else if (playerScore > opponentScore) stats.wins += 1;
@@ -257,24 +485,93 @@ function saveCompletedMatch(isDraw = false) {
     stats.totalRallies += rallyCount;
     stats.longestRally = Math.max(stats.longestRally, longestRally);
 
-    writeCareerStats(stats);
+    const result = isDraw ? "DRAW" : (playerScore > opponentScore ? "WIN" : "LOSS");
+    target.recentMatches.unshift({
+        date: new Date().toISOString(),
+        mode: isEndlessMode ? "ENDLESS" : "MATCH",
+        difficulty: currentDifficulty.toUpperCase(),
+        result,
+        playerScore,
+        aiScore: opponentScore,
+        rallies: rallyCount
+    });
+    target.recentMatches = target.recentMatches.slice(0, 5);
+
+    writePlayerProfiles(profiles);
     renderCareerStats();
 }
 
 function resetCareerStats() {
-    writeCareerStats(emptyCareerStats());
-    renderCareerStats();
+    const profile = getActivePlayer();
+    if (!profile) {
+        window.alert("Choose a player before resetting stats.");
+        return;
+    }
+
+    const profiles = readPlayerProfiles();
+    const target = profiles.find(item => item.id === profile.id);
+    if (!target) return;
+
+    target.stats = emptyCareerStats();
+    target.recentMatches = [];
+    if (writePlayerProfiles(profiles)) renderCareerStats();
+    else window.alert("Couldn't save the reset. Check this browser's storage settings.");
 }
 
 const resetCareerStatsButton = document.getElementById("resetCareerStatsButton");
 if (resetCareerStatsButton) {
     resetCareerStatsButton.addEventListener("click", function() {
-        if (window.confirm("Reset all saved PongMind career statistics on this browser?")) {
+        const profile = getActivePlayer();
+        if (!profile) {
+            window.alert("Choose a player before resetting stats.");
+            return;
+        }
+        if (window.confirm("Reset stats and recent match history for " + profile.name + "? This cannot be undone.")) {
             resetCareerStats();
         }
     });
 }
 
+if (switchPlayerButton) {
+    switchPlayerButton.addEventListener("click", function() {
+        openPlayerModal("switch");
+    });
+}
+
+savedPlayersList.addEventListener("click", function(event) {
+    const button = event.target.closest("[data-player-id]");
+    if (!button) return;
+    const profile = readPlayerProfiles().find(item => item.id === button.dataset.playerId);
+    if (profile) continueWithPlayer(profile);
+});
+
+playerNameForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+    const name = playerNameInput.value.trim();
+    if (!name) {
+        playerFeedback.textContent = "Enter a player name to continue.";
+        return;
+    }
+
+    const existing = findPlayerByName(name);
+    if (existing) {
+        continueWithPlayer(existing);
+        return;
+    }
+
+    const result = createPlayerProfile(name);
+    if (result.error) {
+        playerFeedback.textContent = result.error;
+        return;
+    }
+    continueWithPlayer(result.profile);
+});
+
+playerModalClose.addEventListener("click", closePlayerModal);
+playerCancelButton.addEventListener("click", closePlayerModal);
+playerModal.addEventListener("click", function(event) {
+    if (event.target === playerModal) closePlayerModal();
+});
 
 function updateSavedDifficultyUI() {
     savedDifficultyElement.textContent = "DIFFICULTY: " + currentDifficulty.toUpperCase();
@@ -351,7 +648,7 @@ difficultyChoices.forEach(button => {
 playNowButton.addEventListener("click", function() {
     applyDifficulty(pendingDifficulty);
     saveModal.classList.remove("open");
-    startConfiguredGame();
+    openPlayerModal("normal");
 });
 
 saveLaterButton.addEventListener("click", function() {
@@ -370,13 +667,12 @@ backMenuButton.addEventListener("click", function() {
 
 startGameButton.addEventListener("click", function(event) {
     event.stopPropagation();
-    winningScore = Number(matchPointsElement.value);
-    startConfiguredGame();
+    openPlayerModal("normal");
 });
 
 endlessButton.addEventListener("click", function(event) {
     event.stopPropagation();
-    startEndlessMode();
+    openPlayerModal("endless");
 });
 
 document.addEventListener("keydown", function(event) {
@@ -1440,6 +1736,10 @@ function beginMatch(introText) {
 }
 
 function startConfiguredGame() {
+    if (!getActivePlayer()) {
+        openPlayerModal("normal");
+        return;
+    }
     isEndlessMode = false;
     winningScore = Number(matchPointsElement.value);
 
@@ -1451,6 +1751,10 @@ function startConfiguredGame() {
 }
 
 function startEndlessMode() {
+    if (!getActivePlayer()) {
+        openPlayerModal("endless");
+        return;
+    }
     isEndlessMode = true;
     winningScore = Infinity;
     endlessStartTime = performance.now();
@@ -1997,6 +2301,7 @@ function exitMatch() {
     confirmModal.classList.remove("open");
     showScreen(menuScreen);
     updateSavedDifficultyUI();
+    renderCareerStats();
 }
 
 function updateFullscreenButton() {
