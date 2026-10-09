@@ -16,9 +16,12 @@ https://siddhidhchchandra.github.io/PongMind/
 - 10-minute Endless Mode
 - Score transitions with READY / GO sequences
 - Match-end screen with final score and rally statistics
-- Persistent career statistics: matches played, wins/losses/draws, win rate, total points, rallies, and longest rally
-- Career statistics saved in browser Local Storage and retained across refreshes on the same browser
-- Reset control for clearing saved career statistics
+- Local player profiles: create a profile or select an existing saved player before playing
+- Case-insensitive name lookup to return to an existing profile on the same browser
+- Per-player career dashboard with matches, W/L/D, win rate, player/AI points, total rallies, and longest rally
+- Recent match history saved separately for each player
+- Profile selection and active-player preference persist in browser Local Storage
+- Reset control clears only the selected player's statistics and recent match history
 - Pause, resume, restart, and exit controls
 
 ### AI Opponent
@@ -124,7 +127,7 @@ This creates a genuine combo mechanic rather than treating the two power-ups as 
 - CSS3
 - Vanilla JavaScript
 - HTML Canvas
-- Local Storage for saved difficulty and career statistics
+- Local Storage for saved difficulty, player profiles, active player, per-player statistics, and recent match history
 - GitHub Pages for deployment
 
 No game engine or framework is used.
@@ -204,16 +207,21 @@ No game engine or framework is used.
 - Mobile touch interaction feedback
 - Reduced-motion accessibility support
 
-### Day 10 — Persistent Career Statistics
-- Added a Career Stats panel to the main menu
-- Tracks completed matches, wins, losses, draws, and win rate
-- Tracks total player/AI points, total rallies, and longest rally
-- Saves career statistics in browser Local Storage
-- Loads saved statistics when the game is reopened or refreshed
-- Added a reset control with confirmation before clearing saved stats
-- Records each completed match once, avoiding duplicate counting
-- Handles missing, malformed, or unavailable saved statistics without breaking the stats panel
-- Displays tied Endless Mode results as draws
+### Day 10 — Player Profiles & Personal Career Stats
+- Added a player-selection flow after choosing START GAME or ENDLESS RUN
+- Create a new local player profile by entering a name
+- Recognize an existing name (case-insensitively) and continue that saved profile
+- Show saved players so they can be selected without retyping their names
+- Remember the active player in the same browser
+- Store match statistics separately for each player
+- Added a player-specific career dashboard with matches, W/L/D, win rate, points, rallies, and longest rally
+- Keep the five most recent completed results for each player
+- Added a confirmed reset that clears only the selected player's stats and recent history
+- Preserve previous single-player career stats by migrating them into a Legacy Player profile when present
+- Records each completed match once and counts tied Endless Mode results as draws
+- Handles malformed or unavailable profile storage gracefully
+
+**Profile limitation:** these are local browser profiles, not secure online accounts. They have no password protection and do not sync across devices or browsers.
 
 ## Future Direction
 
