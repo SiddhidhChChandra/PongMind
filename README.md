@@ -16,6 +16,9 @@ https://siddhidhchchandra.github.io/PongMind/
 - 10-minute Endless Mode
 - Score transitions with READY / GO sequences
 - Match-end screen with final score and rally statistics
+- Persistent career statistics: matches played, wins/losses/draws, win rate, total points, rallies, and longest rally
+- Career statistics saved in browser Local Storage and retained across refreshes on the same browser
+- Reset control for clearing saved career statistics
 - Pause, resume, restart, and exit controls
 
 ### AI Opponent
@@ -121,7 +124,7 @@ This creates a genuine combo mechanic rather than treating the two power-ups as 
 - CSS3
 - Vanilla JavaScript
 - HTML Canvas
-- Local Storage for saved difficulty
+- Local Storage for saved difficulty and career statistics
 - GitHub Pages for deployment
 
 No game engine or framework is used.
@@ -200,6 +203,17 @@ No game engine or framework is used.
 - Polished WIN / LOSE end-screen entrance animations
 - Mobile touch interaction feedback
 - Reduced-motion accessibility support
+
+### Day 10 — Persistent Career Statistics
+- Added a Career Stats panel to the main menu
+- Tracks completed matches, wins, losses, draws, and win rate
+- Tracks total player/AI points, total rallies, and longest rally
+- Saves career statistics in browser Local Storage
+- Loads saved statistics when the game is reopened or refreshed
+- Added a reset control with confirmation before clearing saved stats
+- Records each completed match once, avoiding duplicate counting
+- Handles missing, malformed, or unavailable saved statistics without breaking the stats panel
+- Displays tied Endless Mode results as draws
 
 ## Future Direction
 
