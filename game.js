@@ -266,6 +266,16 @@ function resetCareerStats() {
     renderCareerStats();
 }
 
+const resetCareerStatsButton = document.getElementById("resetCareerStatsButton");
+if (resetCareerStatsButton) {
+    resetCareerStatsButton.addEventListener("click", function() {
+        if (window.confirm("Reset all saved PongMind career statistics on this browser?")) {
+            resetCareerStats();
+        }
+    });
+}
+
+
 function updateSavedDifficultyUI() {
     savedDifficultyElement.textContent = "DIFFICULTY: " + currentDifficulty.toUpperCase();
 }
@@ -2103,5 +2113,6 @@ function gameLoop() {
 
 setDifficulty(currentDifficulty);
 updateSavedDifficultyUI();
+renderCareerStats();
 updateScoreboard();
 gameLoop();
