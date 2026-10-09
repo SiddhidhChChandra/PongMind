@@ -109,6 +109,20 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
 .info-footer{margin-top:22px;text-align:center;color:#53688e;font-size:9px;letter-spacing:3px}
 @media(max-width:620px){.info-panel{padding:20px 15px}.info-grid{grid-template-columns:1fr}.info-card{padding:13px}.info-title{font-size:42px}}
 
+
+/* DAY 10 — PERSISTENT CAREER STATS */
+.career-stats{margin:18px 0 12px;padding:15px;background:#0b0d18;border:2px solid #33415f;box-shadow:4px 4px 0 #03040a;text-align:left}
+.career-stats-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.career-stats-heading h3{margin:0;color:#7df9ff;font-family:Impact,"Arial Black",sans-serif;font-size:21px;letter-spacing:2px}
+.career-reset{padding:6px 9px;border:1px solid #53688e;background:#171a2c;color:#8fa3c7;font-size:9px;font-weight:900;letter-spacing:1px;cursor:pointer}
+.career-reset:hover{border-color:#ff496e;color:#ff496e}
+.career-stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.career-stat{min-width:0;padding:10px 8px;background:#171a2c;border:1px solid #33415f}
+.career-stat span{display:block;color:#8fa3c7;font-size:8px;font-weight:900;letter-spacing:1px}
+.career-stat strong{display:block;margin-top:5px;color:#f4f7ff;font-family:Impact,"Arial Black",sans-serif;font-size:clamp(16px,3vw,23px);overflow-wrap:anywhere}
+.career-stats-note{margin:10px 0 0;color:#53688e;font-size:8px;letter-spacing:1px}
+@media(max-width:420px){.career-stats{padding:12px}.career-stats-grid{gap:6px}.career-stat{padding:8px 6px}.career-stat span{font-size:7px;letter-spacing:.5px}}
+
 /* DAY 9 — ARCADE INTERACTION POLISH */
 .menu-btn,.difficulty-btn,.difficulty-choice,.match-points,.pause-button,.info-close,.end-btn,.touch-control{
   position:relative;overflow:hidden;
@@ -168,6 +182,21 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
 <select class="match-points" id="matchPoints"><option value="3">3 POINTS</option><option value="5" selected>5 POINTS</option><option value="7">7 POINTS</option><option value="10">10 POINTS</option><option value="15">15 POINTS</option></select>
 </div>
 <p class="saved-difficulty" id="savedDifficulty">DIFFICULTY: NORMAL</p>
+<div class="career-stats" aria-labelledby="careerStatsTitle">
+  <div class="career-stats-heading">
+    <h3 id="careerStatsTitle">CAREER STATS</h3>
+    <button class="career-reset" id="resetCareerStatsButton" type="button">RESET</button>
+  </div>
+  <div class="career-stats-grid">
+    <div class="career-stat"><span>MATCHES</span><strong id="careerMatches">0</strong></div>
+    <div class="career-stat"><span>W / L / D</span><strong id="careerRecord">0 / 0 / 0</strong></div>
+    <div class="career-stat"><span>WIN RATE</span><strong id="careerWinRate">0%</strong></div>
+    <div class="career-stat"><span>POINTS P / AI</span><strong id="careerPoints">0 : 0</strong></div>
+    <div class="career-stat"><span>RALLIES</span><strong id="careerRallies">0</strong></div>
+    <div class="career-stat"><span>BEST RALLY</span><strong id="careerLongest">0s</strong></div>
+  </div>
+  <p class="career-stats-note">SAVED ON THIS BROWSER • MATCH RESULTS ONLY</p>
+</div>
 <button class="menu-btn back" id="backHomeButton">BACK</button>
 <p class="menu-note">ENDLESS RUN • 10 MINUTES • HIGH SCORE TAKES THE ROUND</p>
 </div>
