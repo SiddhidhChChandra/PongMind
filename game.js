@@ -240,7 +240,7 @@ function normalizeCareerStats(source) {
 function normalizePlayerProfile(source) {
     if (!source || typeof source !== "object" || Array.isArray(source)) return null;
     const id = typeof source.id === "string" ? source.id : "";
-    const name = typeof source.name === "string" ? source.name.trim().replace(/\\s+/g, " ").slice(0, 20) : "";
+    const name = typeof source.name === "string" ? source.name.trim().replace(/\s+/g, " ").slice(0, 20) : "";
     if (!id || !name) return null;
 
     const recentMatches = Array.isArray(source.recentMatches)
@@ -320,12 +320,12 @@ function setActivePlayer(profile) {
 }
 
 function findPlayerByName(name, profiles = readPlayerProfiles()) {
-    const normalized = name.trim().replace(/\\s+/g, " ").toLocaleLowerCase();
+    const normalized = name.trim().replace(/\s+/g, " ").toLocaleLowerCase();
     return profiles.find(profile => profile.name.toLocaleLowerCase() === normalized) || null;
 }
 
 function createPlayerProfile(name) {
-    const cleanName = name.trim().replace(/\\s+/g, " ");
+    const cleanName = name.trim().replace(/\s+/g, " ");
     if (!cleanName) return { error: "Enter a player name to continue." };
     if (cleanName.length > 20) return { error: "Player names must be 20 characters or fewer." };
 
@@ -554,7 +554,7 @@ savedPlayersList.addEventListener("click", function(event) {
 
 playerNameForm.addEventListener("submit", function(event) {
     event.preventDefault();
-    const name = playerNameInput.value.trim().replace(/\\s+/g, " ");
+    const name = playerNameInput.value.trim().replace(/\s+/g, " ");
     if (!name) {
         playerFeedback.textContent = "Enter a player name to continue.";
         return;
