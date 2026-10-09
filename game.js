@@ -842,7 +842,8 @@ difficultyChoices.forEach(button => {
 playNowButton.addEventListener("click", function() {
     applyDifficulty(pendingDifficulty);
     saveModal.classList.remove("open");
-    openPlayerModal("normal");
+    if (getActivePlayer()) startConfiguredGame();
+    else showScreen(accountChoiceScreen);
 });
 
 saveLaterButton.addEventListener("click", function() {
