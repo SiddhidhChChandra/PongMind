@@ -5,6 +5,9 @@ const homeScreen = document.getElementById("homeScreen");
 const menuScreen = document.getElementById("menuScreen");
 const difficultyScreen = document.getElementById("difficultyScreen");
 const infoScreen = document.getElementById("infoScreen");
+const accountChoiceScreen = document.getElementById("accountChoiceScreen");
+const createAccountScreen = document.getElementById("createAccountScreen");
+const playerLibraryScreen = document.getElementById("playerLibraryScreen");
 const menuInfoButton = document.getElementById("menuInfoButton");
 const infoCloseButton = document.getElementById("infoCloseButton");
 const infoBackButton = document.getElementById("infoBackButton");
@@ -170,7 +173,7 @@ let isPaused = false;
 let pendingDifficulty = currentDifficulty;
 
 function showScreen(screenToShow) {
-    [homeScreen, menuScreen, difficultyScreen, infoScreen, gameScreen].forEach(screen => {
+    [homeScreen, accountChoiceScreen, createAccountScreen, playerLibraryScreen, menuScreen, difficultyScreen, infoScreen, gameScreen].forEach(screen => {
         screen.classList.toggle("hidden", screen !== screenToShow);
     });
 }
@@ -179,6 +182,7 @@ const PLAYER_PROFILES_KEY = "pongmindProfiles";
 const ACTIVE_PLAYER_KEY = "pongmindActivePlayerId";
 const LEGACY_STATS_KEY = "pongmindCareerStats";
 let matchStatsSaved = false;
+let gameSessionStartedAt = 0;
 let activePlayerId = safeStorageGet(ACTIVE_PLAYER_KEY) || "";
 let pendingPlayerAction = "normal";
 
@@ -219,7 +223,8 @@ function emptyCareerStats() {
         playerPoints: 0,
         aiPoints: 0,
         totalRallies: 0,
-        longestRally: 0
+        longestRally: 0,
+        playTimeSeconds: 0
     };
 }
 
@@ -232,7 +237,7 @@ function normalizeCareerStats(source) {
         stats[key] = Number.isFinite(value) && value >= 0 ? value : 0;
     });
 
-    ["matchesPlayed", "wins", "losses", "draws", "playerPoints", "aiPoints", "totalRallies"]
+    ["matchesPlayed", "wins", "losses", "draws", "playerPoints", "aiPoints", "totalRallies", "playTimeSeconds"]
         .forEach(key => { stats[key] = Math.floor(stats[key]); });
     return stats;
 }
@@ -258,6 +263,7 @@ function normalizePlayerProfile(source) {
     return {
         id,
         name,
+        passwordHash: typeof source.passwordHash === "string" ? source.passwordHash : "",
         createdAt: typeof source.createdAt === "string" ? source.createdAt : new Date().toISOString(),
         stats: normalizeCareerStats(source.stats),
         recentMatches
@@ -324,7 +330,7 @@ function findPlayerByName(name, profiles = readPlayerProfiles()) {
     return profiles.find(profile => profile.name.toLocaleLowerCase() === normalized) || null;
 }
 
-function createPlayerProfile(name) {
+function createPlayerProfile(name, passwordHash = "") {
     const cleanName = name.trim().replace(/\s+/g, " ");
     if (!cleanName) return { error: "Enter a player name to continue." };
     if (cleanName.length > 20) return { error: "Player names must be 20 characters or fewer." };
@@ -336,6 +342,7 @@ function createPlayerProfile(name) {
     const profile = {
         id: "player-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
         name: cleanName,
+        passwordHash,
         createdAt: new Date().toISOString(),
         stats: emptyCareerStats(),
         recentMatches: []
@@ -491,6 +498,7 @@ function saveCompletedMatch(isDraw = false) {
     stats.aiPoints += opponentScore;
     stats.totalRallies += rallyCount;
     stats.longestRally = Math.max(stats.longestRally, longestRally);
+    stats.playTimeSeconds += Math.max(0, Math.floor((Date.now() - (gameSessionStartedAt || Date.now())) / 1000));
 
     const result = isDraw ? "DRAW" : (playerScore > opponentScore ? "WIN" : "LOSS");
     target.recentMatches.unshift({
@@ -544,7 +552,7 @@ if (resetCareerStatsButton) {
 
 if (switchPlayerButton) {
     switchPlayerButton.addEventListener("click", function() {
-        openPlayerModal("switch");
+        showPlayerLibrary();
     });
 }
 
@@ -636,8 +644,184 @@ infoBackButton.addEventListener("click", function() {
     closeInfoPage(menuScreen);
 });
 
+
+/* New-player / returning-player account flow. Passwords are hashed locally,
+   but this is still browser-only storage, not server-side authentication. */
+const newPlayerButton = document.getElementById("newPlayerButton");
+const returningPlayerButton = document.getElementById("returningPlayerButton");
+const accountBackButton = document.getElementById("accountBackButton");
+const createAccountBackButton = document.getElementById("createAccountBackButton");
+const createAccountForm = document.getElementById("createAccountForm");
+const newAccountName = document.getElementById("newAccountName");
+const newAccountPassword = document.getElementById("newAccountPassword");
+const confirmAccountPassword = document.getElementById("confirmAccountPassword");
+const createAccountFeedback = document.getElementById("createAccountFeedback");
+const playerLibraryGrid = document.getElementById("playerLibraryGrid");
+const libraryCreateButton = document.getElementById("libraryCreateButton");
+const libraryBackButton = document.getElementById("libraryBackButton");
+const playerLoginForm = document.getElementById("playerLoginForm");
+const libraryPassword = document.getElementById("libraryPassword");
+const selectedLibraryPlayer = document.getElementById("selectedLibraryPlayer");
+const playerLoginButton = document.getElementById("playerLoginButton");
+const playerLoginFeedback = document.getElementById("playerLoginFeedback");
+let selectedLibraryPlayerId = "";
+
+function formatPlayTime(seconds) {
+    const safe = Math.max(0, Math.floor(Number(seconds) || 0));
+    const hours = Math.floor(safe / 3600);
+    const minutes = Math.floor((safe % 3600) / 60);
+    return hours ? hours + "h " + minutes + "m" : minutes + "m";
+}
+
+async function hashAccountPassword(password) {
+    if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) {
+        throw new Error("Password hashing is unavailable in this browser. Open the HTTPS GitHub Pages link.");
+    }
+    const bytes = new TextEncoder().encode(password);
+    const digest = await window.crypto.subtle.digest("SHA-256", bytes);
+    return Array.from(new Uint8Array(digest)).map(value => value.toString(16).padStart(2, "0")).join("");
+}
+
+function showPlayerLibrary() {
+    selectedLibraryPlayerId = "";
+    libraryPassword.value = "";
+    playerLoginFeedback.textContent = "";
+    renderPlayerLibrary();
+    showScreen(playerLibraryScreen);
+}
+
+function renderPlayerLibrary() {
+    const profiles = readPlayerProfiles().sort((a, b) => a.name.localeCompare(b.name));
+    playerLibraryGrid.replaceChildren();
+    if (!profiles.length) {
+        const empty = document.createElement("div");
+        empty.className = "library-empty";
+        empty.textContent = "NO PLAYER DATA YET — create the first player profile to begin.";
+        playerLibraryGrid.appendChild(empty);
+    }
+
+    profiles.forEach(profile => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "player-profile-card" + (profile.id === selectedLibraryPlayerId ? " selected" : "");
+        card.dataset.libraryPlayerId = profile.id;
+        const name = document.createElement("span");
+        name.className = "library-player-name";
+        name.textContent = profile.name;
+        const meta = document.createElement("span");
+        meta.className = "library-player-meta";
+        meta.textContent = formatPlayTime(profile.stats.playTimeSeconds) + " PLAYTIME · " + profile.stats.matchesPlayed + " MATCHES";
+        const hover = document.createElement("span");
+        hover.className = "library-hover-stats";
+        const values = [
+            ["WINS", profile.stats.wins],
+            ["WIN RATE", (profile.stats.matchesPlayed ? Math.round(profile.stats.wins / profile.stats.matchesPlayed * 100) : 0) + "%"],
+            ["POINTS", profile.stats.playerPoints + " : " + profile.stats.aiPoints],
+            ["BEST RALLY", Math.round(profile.stats.longestRally) + "s"]
+        ];
+        values.forEach(([label, value]) => {
+            const stat = document.createElement("span");
+            stat.className = "library-hover-stat";
+            const caption = document.createElement("span");
+            caption.textContent = label;
+            const strong = document.createElement("strong");
+            strong.textContent = value;
+            stat.append(caption, strong);
+            hover.appendChild(stat);
+        });
+        card.append(name, meta, hover);
+        playerLibraryGrid.appendChild(card);
+    });
+    if (selectedLibraryPlayerId) {
+        const selected = profiles.find(profile => profile.id === selectedLibraryPlayerId);
+        selectedLibraryPlayer.textContent = selected ? selected.name : "Choose a player";
+        playerLoginButton.textContent = selected && !selected.passwordHash ? "SET PASSWORD & CONTINUE" : "LOG IN & CONTINUE";
+    } else {
+        selectedLibraryPlayer.textContent = "Choose a player";
+        playerLoginButton.textContent = "LOG IN & CONTINUE";
+    }
+}
+
+newPlayerButton.addEventListener("click", () => {
+    createAccountForm.reset();
+    createAccountFeedback.textContent = "";
+    showScreen(createAccountScreen);
+});
+returningPlayerButton.addEventListener("click", showPlayerLibrary);
+accountBackButton.addEventListener("click", () => showScreen(homeScreen));
+createAccountBackButton.addEventListener("click", () => showScreen(accountChoiceScreen));
+libraryBackButton.addEventListener("click", () => showScreen(accountChoiceScreen));
+libraryCreateButton.addEventListener("click", () => {
+    createAccountForm.reset();
+    createAccountFeedback.textContent = "";
+    showScreen(createAccountScreen);
+});
+
+createAccountForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    createAccountFeedback.textContent = "";
+    const name = newAccountName.value.trim().replace(/\s+/g, " ");
+    const password = newAccountPassword.value;
+    if (!name) { createAccountFeedback.textContent = "Choose a username."; return; }
+    if (name.length > 20) { createAccountFeedback.textContent = "Usernames must be 20 characters or fewer."; return; }
+    if (password.length < 6) { createAccountFeedback.textContent = "Use a password with at least 6 characters."; return; }
+    if (password !== confirmAccountPassword.value) { createAccountFeedback.textContent = "The passwords do not match."; return; }
+    if (findPlayerByName(name)) { createAccountFeedback.textContent = "That username already exists here. Choose another or use Returning Player."; return; }
+    try {
+        const passwordHash = await hashAccountPassword(password);
+        const result = createPlayerProfile(name, passwordHash);
+        if (result.error) { createAccountFeedback.textContent = result.error; return; }
+        setActivePlayer(result.profile);
+        renderCareerStats();
+        showScreen(menuScreen);
+    } catch (error) {
+        createAccountFeedback.textContent = error.message || "Could not create the account. Try again.";
+    }
+});
+
+playerLibraryGrid.addEventListener("click", event => {
+    const card = event.target.closest("[data-library-player-id]");
+    if (!card) return;
+    selectedLibraryPlayerId = card.dataset.libraryPlayerId;
+    libraryPassword.value = "";
+    playerLoginFeedback.textContent = "";
+    renderPlayerLibrary();
+    libraryPassword.focus();
+});
+
+playerLoginForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    playerLoginFeedback.textContent = "";
+    const profile = readPlayerProfiles().find(item => item.id === selectedLibraryPlayerId);
+    if (!profile) { playerLoginFeedback.textContent = "Select a player card first."; return; }
+    if (libraryPassword.value.length < 6) { playerLoginFeedback.textContent = "Enter a password with at least 6 characters."; return; }
+    try {
+        const suppliedHash = await hashAccountPassword(libraryPassword.value);
+        if (profile.passwordHash && profile.passwordHash !== suppliedHash) {
+            playerLoginFeedback.textContent = "Incorrect password. Try again.";
+            libraryPassword.select();
+            return;
+        }
+        if (!profile.passwordHash) {
+            const profiles = readPlayerProfiles();
+            const target = profiles.find(item => item.id === profile.id);
+            target.passwordHash = suppliedHash;
+            if (!writePlayerProfiles(profiles)) {
+                playerLoginFeedback.textContent = "Could not save this password in browser storage.";
+                return;
+            }
+        }
+        setActivePlayer(profile);
+        renderCareerStats();
+        showScreen(menuScreen);
+    } catch (error) {
+        playerLoginFeedback.textContent = error.message || "Could not verify this password.";
+    }
+});
+
+
 homeScreen.addEventListener("click", function() {
-    showScreen(menuScreen);
+    showScreen(accountChoiceScreen);
 });
 
 difficultyButton.addEventListener("click", function(event) {
@@ -677,12 +861,12 @@ backMenuButton.addEventListener("click", function() {
 
 startGameButton.addEventListener("click", function(event) {
     event.stopPropagation();
-    openPlayerModal("normal");
+    if (getActivePlayer()) startConfiguredGame(); else showScreen(accountChoiceScreen);
 });
 
 endlessButton.addEventListener("click", function(event) {
     event.stopPropagation();
-    openPlayerModal("endless");
+    if (getActivePlayer()) startEndlessMode(); else showScreen(accountChoiceScreen);
 });
 
 document.addEventListener("keydown", function(event) {
@@ -1747,10 +1931,11 @@ function beginMatch(introText) {
 
 function startConfiguredGame() {
     if (!getActivePlayer()) {
-        openPlayerModal("normal");
+        showScreen(accountChoiceScreen);
         return;
     }
     isEndlessMode = false;
+    gameSessionStartedAt = Date.now();
     winningScore = Number(matchPointsElement.value);
 
     gameSubtitleElement.textContent =
@@ -1762,10 +1947,11 @@ function startConfiguredGame() {
 
 function startEndlessMode() {
     if (!getActivePlayer()) {
-        openPlayerModal("endless");
+        showScreen(accountChoiceScreen);
         return;
     }
     isEndlessMode = true;
+    gameSessionStartedAt = Date.now();
     winningScore = Infinity;
     endlessStartTime = performance.now();
 
