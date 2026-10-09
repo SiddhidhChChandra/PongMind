@@ -110,18 +110,45 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
 @media(max-width:620px){.info-panel{padding:20px 15px}.info-grid{grid-template-columns:1fr}.info-card{padding:13px}.info-title{font-size:42px}}
 
 
-/* DAY 10 — PERSISTENT CAREER STATS */
+/* DAY 10 — PLAYER PROFILES & CAREER DASHBOARD */
 .career-stats{margin:18px 0 12px;padding:15px;background:#0b0d18;border:2px solid #33415f;box-shadow:4px 4px 0 #03040a;text-align:left}
-.career-stats-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.career-stats-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
 .career-stats-heading h3{margin:0;color:#7df9ff;font-family:Impact,"Arial Black",sans-serif;font-size:21px;letter-spacing:2px}
-.career-reset{padding:6px 9px;border:1px solid #53688e;background:#171a2c;color:#8fa3c7;font-size:9px;font-weight:900;letter-spacing:1px;cursor:pointer}
-.career-reset:hover{border-color:#ff496e;color:#ff496e}
+.career-player-name{margin:5px 0 0;color:#ffcf5a;font-size:10px;font-weight:900;letter-spacing:1px;overflow-wrap:anywhere}
+.career-stats-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.career-reset{padding:7px 9px;border:1px solid #53688e;background:#171a2c;color:#8fa3c7;font-size:8px;font-weight:900;letter-spacing:1px;cursor:pointer}
+.career-reset:hover{border-color:#55e7ff;color:#55e7ff}
+.career-reset.danger:hover{border-color:#ff496e;color:#ff496e}
 .career-stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .career-stat{min-width:0;padding:10px 8px;background:#171a2c;border:1px solid #33415f}
 .career-stat span{display:block;color:#8fa3c7;font-size:8px;font-weight:900;letter-spacing:1px}
 .career-stat strong{display:block;margin-top:5px;color:#f4f7ff;font-family:Impact,"Arial Black",sans-serif;font-size:clamp(16px,3vw,23px);overflow-wrap:anywhere}
+.career-recent{margin-top:16px}
+.career-recent h4{margin:0 0 8px;color:#7df9ff;font-family:Impact,"Arial Black",sans-serif;font-size:14px;letter-spacing:2px}
+.career-recent-list{display:grid;gap:6px}
+.career-recent-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 9px;background:#111321;border-left:2px solid #53688e;color:#c7d0e2;font-size:9px}
+.career-recent-row.win{border-left-color:#55e7ff}.career-recent-row.loss{border-left-color:#ff2bd6}.career-recent-row.draw{border-left-color:#ffcf5a}
+.career-recent-detail{min-width:0;overflow-wrap:anywhere}.career-recent-score{flex:0 0 auto;color:#fff;font-family:Impact,"Arial Black",sans-serif;font-size:14px}
+.career-empty{margin:0;padding:10px;color:#53688e;font-size:10px;line-height:1.5}
 .career-stats-note{margin:10px 0 0;color:#53688e;font-size:8px;letter-spacing:1px}
-@media(max-width:420px){.career-stats{padding:12px}.career-stats-grid{gap:6px}.career-stat{padding:8px 6px}.career-stat span{font-size:7px;letter-spacing:.5px}}
+.player-modal{display:none;position:fixed;inset:0;z-index:80;align-items:center;justify-content:center;padding:16px;background:rgba(4,5,12,.88);overflow:auto}
+.player-modal.open{display:flex;animation:modalFade .25s ease forwards}
+.player-box{width:min(540px,96vw);max-height:calc(100vh - 32px);overflow:auto;padding:23px;background:#111321;border:4px solid #55e7ff;box-shadow:8px 8px 0 #03040a,0 0 35px rgba(155,44,255,.16)}
+.player-modal-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.player-kicker{margin:0 0 7px;color:#7df9ff;font-size:9px;font-weight:900;letter-spacing:3px}
+.player-modal-header h2{margin:0;color:#f4f7ff;font-family:Impact,"Arial Black",sans-serif;font-size:clamp(31px,7vw,48px);letter-spacing:2px;text-shadow:2px 2px 0 #ff2bd6}
+.player-modal-intro{margin:14px 0;color:#8fa3c7;font-size:11px;line-height:1.5}
+.saved-player-list{display:grid;gap:7px;max-height:180px;overflow:auto;margin:12px 0}
+.saved-player-button{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:12px;border:2px solid #33415f;background:#171a2c;color:#f4f7ff;text-align:left;cursor:pointer}
+.saved-player-button:hover,.saved-player-button.current{border-color:#55e7ff;background:#1a2035}
+.saved-player-name{font-family:Impact,"Arial Black",sans-serif;font-size:17px;letter-spacing:1px;overflow-wrap:anywhere}
+.saved-player-meta{color:#8fa3c7;font-size:9px;text-align:right}
+.player-name-form{display:grid;gap:8px;margin-top:15px}
+.player-name-form input{width:100%;min-height:46px;padding:10px 12px;border:2px solid #33415f;background:#090a12;color:#fff;outline:none}
+.player-name-form input:focus{border-color:#55e7ff}
+.player-feedback{min-height:18px;margin:9px 0;color:#ffcf5a;font-size:10px;line-height:1.4}
+.player-local-note{margin:8px 0 14px;color:#53688e;font-size:8px;line-height:1.5;letter-spacing:.5px}
+@media(max-width:420px){.career-stats{padding:12px}.career-stats-heading{flex-direction:column}.career-stats-actions{justify-content:flex-start}.career-stats-grid{gap:6px}.career-stat{padding:8px 6px}.career-stat span{font-size:7px;letter-spacing:.5px}.player-box{padding:17px}.saved-player-button{padding:9px}.saved-player-meta{font-size:8px}}
 
 /* DAY 9 — ARCADE INTERACTION POLISH */
 .menu-btn,.difficulty-btn,.difficulty-choice,.match-points,.pause-button,.info-close,.end-btn,.touch-control{
@@ -184,8 +211,14 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
 <p class="saved-difficulty" id="savedDifficulty">DIFFICULTY: NORMAL</p>
 <div class="career-stats" aria-labelledby="careerStatsTitle">
   <div class="career-stats-heading">
-    <h3 id="careerStatsTitle">CAREER STATS</h3>
-    <button class="career-reset" id="resetCareerStatsButton" type="button">RESET</button>
+    <div>
+      <h3 id="careerStatsTitle">PLAYER STATS</h3>
+      <p class="career-player-name" id="careerPlayerName">NO PLAYER SELECTED</p>
+    </div>
+    <div class="career-stats-actions">
+      <button class="career-reset" id="switchPlayerButton" type="button">SWITCH PLAYER</button>
+      <button class="career-reset danger" id="resetCareerStatsButton" type="button">RESET STATS</button>
+    </div>
   </div>
   <div class="career-stats-grid">
     <div class="career-stat"><span>MATCHES</span><strong id="careerMatches">0</strong></div>
@@ -195,7 +228,11 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
     <div class="career-stat"><span>RALLIES</span><strong id="careerRallies">0</strong></div>
     <div class="career-stat"><span>BEST RALLY</span><strong id="careerLongest">0s</strong></div>
   </div>
-  <p class="career-stats-note">SAVED ON THIS BROWSER • MATCH RESULTS ONLY</p>
+  <div class="career-recent">
+    <h4>RECENT MATCHES</h4>
+    <div id="careerRecentMatches" class="career-recent-list"><p class="career-empty">Choose or create a player to view stats.</p></div>
+  </div>
+  <p class="career-stats-note">PROFILE DATA IS SAVED IN THIS BROWSER ONLY</p>
 </div>
 <button class="menu-btn back" id="backHomeButton">BACK</button>
 <p class="menu-note">ENDLESS RUN • 10 MINUTES • HIGH SCORE TAKES THE ROUND</p>
@@ -266,6 +303,24 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
 </div>
 </section>
 
+<div class="player-modal" id="playerModal" role="dialog" aria-modal="true" aria-labelledby="playerModalTitle">
+  <div class="player-box">
+    <div class="player-modal-header">
+      <div><p class="player-kicker">ARCADE PROFILE SYSTEM</p><h2 id="playerModalTitle">WHO'S PLAYING?</h2></div>
+      <button class="info-close" id="playerModalClose" type="button" aria-label="Close player selection">×</button>
+    </div>
+    <p class="player-modal-intro" id="playerModalIntro">Choose a saved player or enter a name to create a new profile.</p>
+    <div class="saved-player-list" id="savedPlayersList"></div>
+    <form id="playerNameForm" class="player-name-form">
+      <label class="menu-label" for="playerNameInput">PLAYER NAME</label>
+      <input id="playerNameInput" name="playerName" type="text" maxlength="20" autocomplete="nickname" placeholder="Enter your player name" required>
+      <button class="menu-btn primary" id="playerContinueButton" type="submit">CREATE PROFILE / LOG IN</button>
+    </form>
+    <p class="player-feedback" id="playerFeedback" role="status" aria-live="polite"></p>
+    <p class="player-local-note">Local browser profiles only. No password or online account is used.</p>
+    <button class="menu-btn back" id="playerCancelButton" type="button">CANCEL</button>
+  </div>
+</div>
 <div class="save-modal" id="saveModal">
 <div class="save-box"><h3 id="saveTitle">NORMAL SELECTED</h3><div class="save-actions">
 <button class="menu-btn primary" id="playNowButton">WANNA PLAY NOW?</button>
