@@ -311,7 +311,10 @@ function getActivePlayer() {
 
 function setActivePlayer(profile) {
     activePlayerId = profile.id;
-    safeStorageSet(ACTIVE_PLAYER_KEY, activePlayerId);
+    const saved = safeStorageSet(ACTIVE_PLAYER_KEY, activePlayerId);
+    if (!saved) {
+        playerFeedback.textContent = "This browser may not remember the active player after you close it.";
+    }
     renderCareerStats();
     updateSavedDifficultyUI();
 }
@@ -340,7 +343,7 @@ function createPlayerProfile(name) {
     profiles.push(profile);
 
     if (!writePlayerProfiles(profiles)) {
-        return { error: "This browser couldn't save the profile. Check storage settings and try again." };
+        return { error: "Profile storage failed. Enable site storage for this browser and try again." };
     }
     return { profile, created: true };
 }
@@ -377,6 +380,10 @@ function renderSavedPlayers() {
 }
 
 function openPlayerModal(action = "normal") {
+    if (!playerModal || !playerNameInput || !playerNameForm || !savedPlayersList) {
+        window.alert("Player profiles could not load. Refresh PongMind and try again.");
+        return;
+    }
     pendingPlayerAction = action;
     playerFeedback.textContent = "";
     playerNameInput.value = "";
@@ -547,7 +554,7 @@ savedPlayersList.addEventListener("click", function(event) {
 
 playerNameForm.addEventListener("submit", function(event) {
     event.preventDefault();
-    const name = playerNameInput.value.trim();
+    const name = playerNameInput.value.trim().replace(/\\s+/g, " ");
     if (!name) {
         playerFeedback.textContent = "Enter a player name to continue.";
         return;
