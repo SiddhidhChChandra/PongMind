@@ -504,8 +504,11 @@ function saveCompletedMatch(isDraw = false) {
     });
     target.recentMatches = target.recentMatches.slice(0, 5);
 
-    writePlayerProfiles(profiles);
+    const saved = writePlayerProfiles(profiles);
     renderCareerStats();
+    if (!saved) {
+        window.alert("This match ended, but the browser could not save the stats. Check site storage settings and try again.");
+    }
 }
 
 function resetCareerStats() {
