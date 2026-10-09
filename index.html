@@ -332,6 +332,18 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 @keyframes arcadeStarFlicker{from{opacity:.78}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.logo,.start-anywhere,.home-screen:before{animation:none!important}}
 
+/* Refined title tracking and subtle breathing scale */
+.logo{
+  letter-spacing:clamp(7px,1.8vw,18px);
+  animation:pongmindNeonFlicker 2.8s steps(1,end) infinite, pongmindBreathing 3.2s ease-in-out infinite;
+  transform-origin:center;
+}
+@keyframes pongmindBreathing{
+  0%,100%{scale:.985}
+  50%{scale:1.025}
+}
+@media(max-width:520px){.logo{letter-spacing:clamp(4px,1.4vw,9px)}}
+
 </style>
 </head>
 <body>
