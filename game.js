@@ -175,6 +175,97 @@ function showScreen(screenToShow) {
     });
 }
 
+const CAREER_STATS_KEY = "pongmindCareerStats";
+let matchStatsSaved = false;
+
+function emptyCareerStats() {
+    return {
+        matchesPlayed: 0,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        playerPoints: 0,
+        aiPoints: 0,
+        totalRallies: 0,
+        longestRally: 0
+    };
+}
+
+function readCareerStats() {
+    const fallback = emptyCareerStats();
+
+    try {
+        const saved = JSON.parse(localStorage.getItem(CAREER_STATS_KEY) || "null");
+        if (!saved || typeof saved !== "object" || Array.isArray(saved)) return fallback;
+
+        Object.keys(fallback).forEach(key => {
+            const value = Number(saved[key]);
+            fallback[key] = Number.isFinite(value) && value >= 0 ? value : 0;
+        });
+
+        fallback.matchesPlayed = Math.floor(fallback.matchesPlayed);
+        fallback.wins = Math.floor(fallback.wins);
+        fallback.losses = Math.floor(fallback.losses);
+        fallback.draws = Math.floor(fallback.draws);
+        fallback.playerPoints = Math.floor(fallback.playerPoints);
+        fallback.aiPoints = Math.floor(fallback.aiPoints);
+        fallback.totalRallies = Math.floor(fallback.totalRallies);
+        return fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function writeCareerStats(stats) {
+    try {
+        localStorage.setItem(CAREER_STATS_KEY, JSON.stringify(stats));
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+function renderCareerStats() {
+    const stats = readCareerStats();
+    const winRate = stats.matchesPlayed
+        ? Math.round((stats.wins / stats.matchesPlayed) * 100)
+        : 0;
+
+    document.getElementById("careerMatches").textContent = stats.matchesPlayed;
+    document.getElementById("careerRecord").textContent =
+        stats.wins + " / " + stats.losses + " / " + stats.draws;
+    document.getElementById("careerWinRate").textContent = winRate + "%";
+    document.getElementById("careerPoints").textContent =
+        stats.playerPoints + " : " + stats.aiPoints;
+    document.getElementById("careerRallies").textContent = stats.totalRallies;
+    document.getElementById("careerLongest").textContent =
+        Math.round(stats.longestRally) + "s";
+}
+
+function saveCompletedMatch(isDraw = false) {
+    if (matchStatsSaved) return;
+    matchStatsSaved = true;
+
+    const stats = readCareerStats();
+    stats.matchesPlayed += 1;
+    if (isDraw) stats.draws += 1;
+    else if (playerScore > opponentScore) stats.wins += 1;
+    else stats.losses += 1;
+
+    stats.playerPoints += playerScore;
+    stats.aiPoints += opponentScore;
+    stats.totalRallies += rallyCount;
+    stats.longestRally = Math.max(stats.longestRally, longestRally);
+
+    writeCareerStats(stats);
+    renderCareerStats();
+}
+
+function resetCareerStats() {
+    writeCareerStats(emptyCareerStats());
+    renderCareerStats();
+}
+
 function updateSavedDifficultyUI() {
     savedDifficultyElement.textContent = "DIFFICULTY: " + currentDifficulty.toUpperCase();
 }
@@ -1324,6 +1415,7 @@ function beginMatch(introText) {
     opponentScore = 0;
     rallyCount = 0;
     longestRally = 0;
+    matchStatsSaved = false;
     resetPowerUps();
 
     ball.visible = false;
@@ -1492,7 +1584,7 @@ function finishEndlessMode() {
     showAnnouncement(winnerText, winnerColor, "show-ready");
     scoreStatusElement.textContent = "";
     setTimeout(() => {
-        if (gameOver) showEndScreen(playerScore > opponentScore);
+        if (gameOver) showEndScreen(playerScore > opponentScore, playerScore === opponentScore);
     }, 700);
 }
 
@@ -1849,18 +1941,21 @@ function drawBall() {
     magneticHeldBalls.forEach(held => drawOneBall(held.ball));
 }
 
-function showEndScreen(playerWon) {
+function showEndScreen(playerWon, isDraw = false) {
+    saveCompletedMatch(isDraw);
     endScreen.classList.add("open");
-    endTitle.textContent = playerWon ? "YOU WIN" : "YOU LOSE";
-    endTitle.classList.toggle("win", playerWon);
-    endTitle.classList.toggle("loss", !playerWon);
-    endStamp.textContent = playerWon ? "MATCH COMPLETE" : "MATCH TERMINATED";
+    endTitle.textContent = isDraw ? "DRAW" : (playerWon ? "YOU WIN" : "YOU LOSE");
+    endTitle.classList.toggle("win", playerWon && !isDraw);
+    endTitle.classList.toggle("loss", !playerWon && !isDraw);
+    endStamp.textContent = isDraw ? "MATCH TIED" : (playerWon ? "MATCH COMPLETE" : "MATCH TERMINATED");
     endScore.textContent = playerScore + " : " + opponentScore;
     endStats.textContent =
         rallyCount + " / " + Math.round(longestRally) + "s";
-    endMessage.textContent = playerWon
-        ? "YOU BEAT THE MACHINE. RUN IT BACK."
-        : "THE MACHINE GOT THE LAST WORD.";
+    endMessage.textContent = isDraw
+        ? "EVEN MATCH. RUN IT BACK."
+        : (playerWon
+            ? "YOU BEAT THE MACHINE. RUN IT BACK."
+            : "THE MACHINE GOT THE LAST WORD.");
 }
 
 function hideEndScreen() {
