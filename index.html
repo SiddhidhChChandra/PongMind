@@ -210,12 +210,107 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
   *,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}
 }
 
+
+/* ACCOUNT FLOW + PLAYER DIRECTORY */
+.account-choice-screen{overflow:auto;align-items:flex-start;justify-content:center;background:radial-gradient(ellipse at 50% 0%,#20294b 0%,#0a0b14 62%);padding:28px 16px}
+.account-panel{width:min(820px,100%);margin:auto;padding:clamp(22px,4vw,42px);border:1px solid rgba(124,148,255,.28);border-radius:18px;background:rgba(11,14,28,.94);box-shadow:0 24px 90px #0009;text-align:center}
+.account-title{font-family:Impact,"Arial Black",sans-serif;font-size:clamp(2rem,6vw,3.6rem);letter-spacing:3px;margin:8px 0;color:#f6f7ff}
+.account-subtitle{color:#9ba9cc;line-height:1.6;margin:0 auto 26px;max-width:540px}
+.account-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:28px 0}
+.account-choice{min-height:210px;border:1px solid #39456d;border-radius:14px;background:linear-gradient(145deg,#171d35,#0e1120);color:#fff;padding:24px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:pointer;transition:transform .22s,border-color .22s,box-shadow .22s}
+.account-choice:hover,.account-choice:focus-visible{transform:translateY(-5px);border-color:#8e9eff;box-shadow:0 12px 32px #5b70ff24;outline:none}
+.account-choice strong{font-family:Impact,"Arial Black",sans-serif;font-size:1.35rem;letter-spacing:1.5px}
+.account-choice>span:last-child{font-size:.9rem;color:#aab5d1;line-height:1.5}
+.account-choice-icon{font-size:2.5rem;color:#ffcf5a}
+.account-form-panel{max-width:520px}
+.account-form{display:grid;gap:10px;text-align:left}
+.account-form label,.player-login-form label{font-size:.75rem;letter-spacing:1.8px;font-weight:800;color:#9cadd7;margin-top:8px}
+.account-form input,.player-login-form input{width:100%;padding:14px 15px;border:1px solid #39456d;border-radius:8px;background:#080b16;color:#fff;font:inherit;outline:none}
+.account-form input:focus,.player-login-form input:focus{border-color:#9aaaff;box-shadow:0 0 0 3px #778cff22}
+.account-feedback{min-height:20px;color:#ffcf5a;font-size:.85rem;line-height:1.5}
+.account-local-note{font-size:.72rem;line-height:1.5;color:#707e9e;margin:18px 0 0}
+.player-library-screen .library-panel{width:min(1080px,100%)}
+.player-library-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;text-align:left;margin:25px 0}
+.player-profile-card{position:relative;min-height:126px;border:1px solid #303b60;border-radius:12px;background:linear-gradient(145deg,#171d35,#0b0e1a);color:#fff;padding:18px;text-align:left;cursor:pointer;overflow:hidden;transition:transform .24s,border-color .24s,box-shadow .24s,min-height .24s;z-index:1}
+.player-profile-card:hover,.player-profile-card:focus-visible,.player-profile-card.selected{transform:scale(1.035);border-color:#ffcf5a;box-shadow:0 12px 30px #0008;z-index:3;outline:none}
+.player-profile-card .library-player-name{font-family:Impact,"Arial Black",sans-serif;font-size:1.25rem;letter-spacing:1px;overflow-wrap:anywhere}
+.player-profile-card .library-player-meta{display:block;color:#91a0c6;font-size:.75rem;margin-top:8px;letter-spacing:.6px}
+.player-profile-card .library-hover-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;max-height:0;opacity:0;overflow:hidden;transition:max-height .24s,opacity .2s}
+.player-profile-card:hover .library-hover-stats,.player-profile-card:focus-visible .library-hover-stats,.player-profile-card.selected .library-hover-stats{max-height:150px;opacity:1}
+.library-hover-stat{padding:8px;background:#070a14;border-radius:7px}
+.library-hover-stat span{display:block;font-size:.62rem;letter-spacing:1px;color:#8392b8}
+.library-hover-stat strong{display:block;margin-top:3px;font-size:1rem;color:#fff}
+.library-empty{grid-column:1/-1;border:1px dashed #39456d;border-radius:12px;padding:24px;color:#9ba9cc}
+.player-login-panel{display:grid;grid-template-columns:1fr 1.2fr;gap:18px;align-items:center;text-align:left;padding:18px;border:1px solid #283252;border-radius:12px;background:#090c18}
+.library-selected-label{font-size:.7rem;letter-spacing:1.5px;color:#8e9dc3;margin:0 0 6px}
+#selectedLibraryPlayer{margin:0;font-size:1.4rem;overflow-wrap:anywhere}
+.player-login-form{display:grid;gap:8px}
+.library-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+@media(max-width:600px){.account-choice-grid{grid-template-columns:1fr}.account-choice{min-height:155px}.player-login-panel{grid-template-columns:1fr}.player-library-grid{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}.player-profile-card{padding:14px}}
+
 </style>
 </head>
 <body>
 <section class="screen home-screen" id="homeScreen">
 <div class="home-content"><p class="home-kicker">INSERT COIN • ARCADE SYSTEM</p><h1 class="logo">PONGMIND</h1><p class="start-anywhere">CLICK ANYWHERE TO START</p></div>
 <div class="home-corner">PLAYER ONE • READY</div>
+</section>
+
+<section class="screen hidden account-choice-screen" id="accountChoiceScreen">
+  <div class="account-panel">
+    <p class="home-kicker">ARCADE ACCESS</p>
+    <h2 class="account-title">WHO'S PLAYING?</h2>
+    <p class="account-subtitle">Create your player profile or return to the arcade.</p>
+    <div class="account-choice-grid">
+      <button class="account-choice new-account" id="newPlayerButton" type="button">
+        <span class="account-choice-icon">＋</span><strong>NEW PLAYER</strong><span>Create a username and password</span>
+      </button>
+      <button class="account-choice returning-account" id="returningPlayerButton" type="button">
+        <span class="account-choice-icon">▤</span><strong>RETURNING PLAYER</strong><span>Find your saved profile and stats</span>
+      </button>
+    </div>
+    <button class="menu-btn back" id="accountBackButton" type="button">BACK TO TITLE</button>
+  </div>
+</section>
+
+<section class="screen hidden account-choice-screen" id="createAccountScreen">
+  <div class="account-panel account-form-panel">
+    <p class="home-kicker">NEW PLAYER REGISTRATION</p>
+    <h2 class="account-title">CREATE PROFILE</h2>
+    <p class="account-subtitle">Your name and stats will appear in the player directory on this browser.</p>
+    <form id="createAccountForm" class="account-form">
+      <label for="newAccountName">PLAYER NAME</label>
+      <input id="newAccountName" type="text" maxlength="20" autocomplete="username" placeholder="Choose a username" required>
+      <label for="newAccountPassword">PASSWORD</label>
+      <input id="newAccountPassword" type="password" minlength="6" autocomplete="new-password" placeholder="At least 6 characters" required>
+      <label for="confirmAccountPassword">CONFIRM PASSWORD</label>
+      <input id="confirmAccountPassword" type="password" minlength="6" autocomplete="new-password" placeholder="Type it again" required>
+      <p class="account-feedback" id="createAccountFeedback" role="status" aria-live="polite"></p>
+      <button class="menu-btn primary" type="submit">CREATE ACCOUNT</button>
+    </form>
+    <button class="menu-btn back" id="createAccountBackButton" type="button">BACK</button>
+    <p class="account-local-note">Browser-only profile storage; this is not a secure online account.</p>
+  </div>
+</section>
+
+<section class="screen hidden account-choice-screen player-library-screen" id="playerLibraryScreen">
+  <div class="account-panel library-panel">
+    <p class="home-kicker">PONGMIND ARCADE DATABASE</p>
+    <h2 class="account-title">PLAYER DIRECTORY</h2>
+    <p class="account-subtitle">Hover over a player to preview their career. Select a profile to continue.</p>
+    <div class="player-library-grid" id="playerLibraryGrid"></div>
+    <div class="player-login-panel" id="playerLoginPanel">
+      <div><p class="library-selected-label">SELECTED PLAYER</p><h3 id="selectedLibraryPlayer">Choose a player</h3></div>
+      <form id="playerLoginForm" class="player-login-form">
+        <label for="libraryPassword">PASSWORD</label>
+        <input id="libraryPassword" type="password" autocomplete="current-password" placeholder="Enter this player's password" required>
+        <button class="menu-btn primary" type="submit" id="playerLoginButton">LOG IN & CONTINUE</button>
+      </form>
+      <p class="account-feedback" id="playerLoginFeedback" role="status" aria-live="polite"></p>
+    </div>
+    <div class="library-actions"><button class="menu-btn" id="libraryCreateButton" type="button">＋ NEW PLAYER</button><button class="menu-btn back" id="libraryBackButton" type="button">BACK</button></div>
+    <p class="account-local-note">Profiles and passwords are stored only in this browser. Clearing browser data can erase them.</p>
+  </div>
 </section>
 
 <section class="screen hidden menu-screen" id="menuScreen">
@@ -375,6 +470,6 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#0b0d18;
 <button class="menu-btn primary" id="confirmYes">YES</button><button class="menu-btn" id="confirmNo">NO</button>
 </div></div></div>
 
-<script src="game.js?v=day10-profile-fix-2"></script>
+<script src="game.js?v=account-directory-v1"></script>
 </body>
 </html>
